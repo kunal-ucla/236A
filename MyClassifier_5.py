@@ -1,18 +1,21 @@
 import numpy as np
 
 class ifier:
-	def __init__(self, class1, class2, num_features):
+	def __init__(self, class1, class2, num_features, alpha=1, lamda=1, epochs=100):
 		self.c=np.array([class1,class2])
 		self.M=num_features
 		self.train_set=np.array([])
 		self.w=np.zeros(self.M)
 		self.b=0
+		self.alpha=alpha
+		self.lamda=lamda
+		self.epochs=epochs
 
 	def sample_selection(self, training_sample):
 		# select from training_sample[] and append to self.train_set[]
 		return
 
-	def train(self, train_data, train_label, alpha=1, lamda=1, epochs=100):
+	def train(self, train_data, train_label):
 		'''
 		Output:
 		self.w		:	numpy array of shape (M,)	:	weights
@@ -21,7 +24,9 @@ class ifier:
 		Input:
 		train_data	:	numpy array of shape (n,d)	:	features
 		train_label	:	numpy array of shape (n,)	:	labels
-		alpha		:	float						:	learning rate
+		self.alpha	:	float						:	learning rate
+		self.lamda	:	float						:	regularization param
+		self.epochs	:	int							:	number of epochs
 		'''
 
 		def grad_func(w,x,y):
@@ -30,9 +35,9 @@ class ifier:
 			grad=np.zeros(len(w))
 			for i,d in enumerate(diff):
 				if max(0,d)!=0:
-					dw=2*w*lamda-y[i]*x[i]
+					dw=2*w*self.lamda-y[i]*x[i]
 				else:
-					dw=2*w*lamda
+					dw=2*w*self.lamda
 				grad=grad+dw
 			grad=grad/np.shape(diff)[0]
 			return grad
@@ -43,9 +48,9 @@ class ifier:
 		w=np.append(self.w,self.b)
 		x=np.append(train_data,np.ones([np.shape(train_data)[0],1]),axis=1)
 
-		for e in range(1, epochs):
+		for e in range(1, self.epochs):
 			gradient=grad_func(w,x,y)
-			w=w-alpha*gradient
+			w=w-self.alpha*gradient
 
 		self.w=w[0:-1]
 		self.b=w[-1]

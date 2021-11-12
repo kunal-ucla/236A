@@ -24,7 +24,7 @@ select=(test_label==choice1)|(test_label==choice2)
 test_data = test_data[select,:]
 test_label = test_label[select]
 
-t=ifier(choice1,choice2,np.shape(train_data)[1])
+t=ifier(choice1,choice2,np.shape(train_data)[1], alpha=0.1, lamda=0.1, epochs=70)
 t.train(train_data,train_label)
 
 test_pred=t.test(test_data)
