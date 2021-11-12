@@ -12,17 +12,17 @@ class ifier:
 		# select from training_sample[] and append to self.train_set[]
 		return
 
-	def train(self, train_data, train_label):
-		# fill self.w and self.b
-		lamda=1
-		alpha=1
+	def train(self, train_data, train_label, alpha=1, lamda=1, epochs=100):
+		'''
+		Output:
+		self.w		:	numpy array of shape (M,)	:	weights
+		self.b		:	float						:	bias term
 
-		def cost_func(w,x,y):
-			# calculate total error for a given w
-			diff=1-y*(np.dot(x,w))
-			diff[diff<0]=0
-			penalty=lamda*np.dot(w,w)+np.sum(diff)/np.shape(diff)[0]
-			return penalty
+		Input:
+		train_data	:	numpy array of shape (n,d)	:	features
+		train_label	:	numpy array of shape (n,)	:	labels
+		alpha		:	float						:	learning rate
+		'''
 
 		def grad_func(w,x,y):
 			# calculate gradient
@@ -30,8 +30,11 @@ class ifier:
 			grad=np.zeros(len(w))
 			for i,d in enumerate(diff):
 				if max(0,d)!=0:
-					grad=grad-y[i]*x[i]
-			grad=2*lamda*w+grad/np.shape(diff)[0]
+					dw=2*w*lamda-y[i]*x[i]
+				else:
+					dw=2*w*lamda
+				grad=grad+dw
+			grad=grad/np.shape(diff)[0]
 			return grad
 
 		y=np.zeros(len(train_label))
@@ -40,14 +43,12 @@ class ifier:
 		w=np.append(self.w,self.b)
 		x=np.append(train_data,np.ones([np.shape(train_data)[0],1]),axis=1)
 
-		epochs=100
 		for e in range(1, epochs):
 			gradient=grad_func(w,x,y)
 			w=w-alpha*gradient
 
 		self.w=w[0:-1]
 		self.b=w[-1]
-		return
 
 	def f(self, input):
 		# decision function based on g(y)
