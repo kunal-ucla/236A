@@ -23,7 +23,7 @@ This "run" method can take the  below arguments:
 - `class2` : second label from all set of labels to be considered for classification, default = 7
 - `normal` : bool value(0 or 1) to specify whether to normalize the input data, default = 0
 - `alpha` : learning rate of gradient descent, default = 0.1
-- `lambda` : regularization parameter, default = 0.1
+- `lamda` : regularization parameter, default = 0.1
 - `epochs` : number of epochs to run, default = 50
 
 Example, to run classification between digits 2 and 5 with normalization of the data and 70 epochs:
