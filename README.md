@@ -30,6 +30,7 @@ Example, to run classification between digits 2 and 5 with normalization of the 
 ```
 test.run(class1=2,class2=5,normal=1,epochs=70)
 ```
+![Example Screenshot](https://i.ibb.co/hKFNdFv/Screenshot-2021-11-13-at-1-43-22-AM.png)
 
 ## References:
 Gradient Descent Inspiration: https://towardsdatascience.com/svm-implementation-from-scratch-python-2db2fc52e5c2
