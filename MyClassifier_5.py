@@ -22,8 +22,8 @@ class ifier:
 		self.b		:	float						:	bias term
 
 		Input:
-		train_data	:	numpy array of shape (n,d)	:	features
-		train_label	:	numpy array of shape (n,)	:	labels
+		train_data	:	numpy array of shape (N,M)	:	features
+		train_label	:	numpy array of shape (N,)	:	labels
 		self.alpha	:	float						:	learning rate
 		self.lamda	:	float						:	regularization param
 		self.epochs	:	int							:	number of epochs
