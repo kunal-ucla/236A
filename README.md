@@ -33,5 +33,5 @@ test.run(class1=2,class2=5,normal=1,epochs=70)
 ![Example Screenshot](https://i.ibb.co/hKFNdFv/Screenshot-2021-11-13-at-1-43-22-AM.png)
 
 ## References:
-Sample Selection and GD Inspiration: http://image.diku.dk/jank/papers/WIREs2014.pdf
+Sample Selection and GD Inspiration: http://image.diku.dk/jank/papers/WIREs2014.pdf  
 GD python code for hinge loss: https://towardsdatascience.com/svm-implementation-from-scratch-python-2db2fc52e5c2
