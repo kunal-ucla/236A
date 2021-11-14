@@ -1,38 +1,65 @@
 from MyClassifier_5 import ifier as classifier # using this for normalizing the data for now
 from sklearn import preprocessing
 import numpy as np
+from numpy.random import normal
 import time
-
+import sys
+import matplotlib.pyplot as plt
+import matplotlib
 
 class tester:
-	def __init__(self):
+	def __init__(self, syn=0):
 		self.loaded = 0
+		self.syn = syn
+		self.size = 500
 
 	def load_train(self, filename):
-		with open(filename, "r") as fid:
-			data = np.loadtxt(fid, delimiter=",")
-		self.train_data_all = data[:,1:]
-		self.train_label_all = data[:,0]
+		if self.syn == 1:
+			x=np.transpose(normal(loc=[-1,1],scale=1,size=[4*self.size ,2]))	# class 1
+			y=np.transpose(normal(loc=[1,-1],scale=1,size=[4*self.size ,2]))	# class -1
+			choice = np.random.randint(2, size = np.shape(x)[1]).astype(bool)
+			self.train_data_all = np.transpose(np.where(choice, x, y))
+			self.train_label_all = np.where(choice, 1, -1)
+		else:
+			with open(filename, "r") as fid:
+				data = np.loadtxt(fid, delimiter=",")
+			self.train_data_all = data[:,1:]
+			self.train_label_all = data[:,0]
 		self.loaded = min(2,1+self.loaded)
 
 	def load_test(self, filename):
-		with open(filename, "r") as fid:
-			data = np.loadtxt(fid, delimiter=",")
-		self.test_data_all = data[:,1:]
-		self.test_label_all = data[:,0]
+		if self.syn == 1:
+			x=np.transpose(normal(loc=[-1,1],scale=1,size=[self.size ,2]))	# class 1
+			y=np.transpose(normal(loc=[1,-1],scale=1,size=[self.size ,2]))	# class -1
+			choice = np.random.randint(2, size = np.shape(x)[1]).astype(bool)
+			self.test_data_all = np.transpose(np.where(choice, x, y))
+			self.test_label_all = np.where(choice, 1, -1)
+		else:
+			with open(filename, "r") as fid:
+				data = np.loadtxt(fid, delimiter=",")
+			self.test_data_all = data[:,1:]
+			self.test_label_all = data[:,0]
 		self.loaded = min(2,1+self.loaded)
 
 	def select_class(self, choice1, choice2):
-		self.choice1 = choice1
-		self.choice2 = choice2
+		if self.syn == 1:
+			self.choice1 = 1
+			self.choice2 = -1
+			self.train_data = self.train_data_all
+			self.train_label = self.train_label_all
+			self.test_data = self.test_data_all
+			self.test_label = self.test_label_all
+		else:
+			self.choice1 = choice1
+			self.choice2 = choice2
 
-		select = (self.train_label_all==choice1) | (self.train_label_all==choice2)
-		self.train_data = self.train_data_all[select,:]
-		self.train_label = self.train_label_all[select]
+			select = (self.train_label_all==choice1) | (self.train_label_all==choice2)
+			self.train_data = self.train_data_all[select,:]
+			self.train_label = self.train_label_all[select]
 
-		select = (self.test_label_all==choice1) | (self.test_label_all==choice2)
-		self.test_data = self.test_data_all[select,:]
-		self.test_label = self.test_label_all[select]
+			select = (self.test_label_all==choice1) | (self.test_label_all==choice2)
+			self.test_data = self.test_data_all[select,:]
+			self.test_label = self.test_label_all[select]
 
 	def train(self, normal, alpha, lamda, epochs, method, select, shuffle, prob, init, delta, limit):
 		if normal:
@@ -43,11 +70,11 @@ class tester:
 		self.num_features = np.shape(self.train_data)[1]
 		self.t = classifier(self.choice1,self.choice2, self.num_features, alpha=alpha, lamda=lamda, epochs=epochs, method=method, shuffle=shuffle, prob=prob, init=init, delta=delta, limit=limit)
 		
+		start = time.time()
 		if select:
 			print("Selecting samples...")
 			chosen = 0
 			total = 0
-			start = time.time()
 			for curr_sample,curr_label in zip(self.train_data,self.train_label):
 				chosen = chosen + self.t.sample_selection(curr_sample,curr_label)
 				total = total + 1
@@ -55,6 +82,7 @@ class tester:
 			self.selected_data = self.t.train_set
 			self.selected_label = self.t.train_label
 		else:
+			chosen = np.shape(self.train_data)[0]
 			self.selected_data = self.train_data
 			self.selected_label = self.train_label
 		end = time.time()
@@ -84,6 +112,21 @@ class tester:
 		total_count = len(test_pred)
 		error_perc = error_count*100/total_count
 		print("Test Error percentage =",error_perc)
+
+	def plot(self):
+		colors=['red','blue']
+		y=self.selected_label
+		y[y==-1]=0
+		plt.figure(1)
+		plt.scatter(self.selected_data[:,0],self.selected_data[:,1],c=y,cmap=matplotlib.colors.ListedColormap(colors))
+
+		colors=['red','blue']
+		y=self.train_label
+		y[y==-1]=0
+		plt.figure(2)
+		plt.scatter(self.train_data[:,0],self.train_data[:,1],c=y,cmap=matplotlib.colors.ListedColormap(colors))
+		
+		plt.show()
 
 	def run(self, **kwargs):
 		if "train_file" not in kwargs:
@@ -131,8 +174,18 @@ class tester:
 		self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], shuffle=kwargs["shuffle"], prob=kwargs["prob"], init=kwargs["init"], delta=kwargs["delta"], limit=kwargs["limit"])
 		self.test()
 
-test = tester()
-print("Loading default datasets...")
+if len(sys.argv)>1:
+	if sys.argv[1]=='-s':
+		test = tester(1)
+		if len(sys.argv)>2:
+			test.size = int(sys.argv[2])
+		print("Loading synthetic datasets...")
+	else:
+		test = tester()
+		print("Loading default datasets...")
+else:
+	test = tester()
+	print("Loading default datasets...")
 test.load_train('mnist_train.csv')
 test.load_test('mnist_test.csv')
 print("Ready. Start by running 'test.run()'")

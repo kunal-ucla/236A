@@ -46,7 +46,10 @@ class ifier:
 					self.counter+=1
 				x=np.append(training_sample,1)
 				w=np.append(self.w,self.b)
-				if abs(np.dot(x,w)) < self.delta:
+				y=1 if training_label==self.c[0] else -1
+				p=np.dot(x,w)
+
+				if abs(p) < self.delta:
 					is_selected=1
 				else:
 					is_selected=0
