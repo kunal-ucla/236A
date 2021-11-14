@@ -19,7 +19,7 @@ class ifier:
 	def sample_selection(self, training_sample, training_label):
 		'''
 		Input:
-		training_sample		:	numpy array of shape (M,1)	:	current sample
+		training_sample		:	numpy array of shape (M,)	:	current sample
 		training_label		:	int							:	current label
 
 		Output:
@@ -28,7 +28,19 @@ class ifier:
 		'''
 
 		# code here for checking whether curr_sample should be included
-		is_selected=np.random.choice([0,1],p=[1-self.prob,self.prob])
+		if self.prob==0:
+			if np.shape(self.train_set)[0] < 100:
+				is_selected=1 # select the 1st 100 samples for sure
+			else:
+				self.train(self.train_set, self.train_label)
+				x=np.append(training_sample,1)
+				w=np.append(self.w,self.b)
+				if abs(np.dot(x,w)) < 100:
+					is_selected=1
+				else:
+					is_selected=0
+		else:
+			is_selected=np.random.choice([0,1],p=[1-self.prob,self.prob])
 
 		if is_selected:
 			self.train_set=np.append(self.train_set, np.reshape(training_sample,(1,len(training_sample))), axis=0)
@@ -91,11 +103,10 @@ class ifier:
 				gradient=grad_func(w,x,y)
 				w=w-self.alpha*gradient
 			elif self.method=='bgd':
-				shuffle=list(range(1,np.shape(y)[0]))
-				for i in shuffle:
-					start=max(0,i-20) # use last 20 samples at every step
-					gradient=grad_func(w,x[start:i,:],y[start:i])
-					w=w-self.alpha*gradient
+				end=np.shape(y)[0]
+				start=max(0,end-20) # use last 20 samples at every step
+				gradient=grad_func(w,x[start:end,:],y[start:end])
+				w=w-self.alpha*gradient
 			else:
 				print("Invalid method, try again")
 

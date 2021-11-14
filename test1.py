@@ -95,6 +95,7 @@ class tester:
 			kwargs["shuffle"]=0
 		if "prob" not in kwargs:
 			kwargs["prob"]=0.2
+			
 
 		if self.loaded != 2:
 			self.load_train(filename=kwargs["train_file"])
