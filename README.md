@@ -47,6 +47,20 @@ test.run(class1=2,class2=5,normal=1,epochs=70)
 - `limit` is as explained in prev section. So I observed that by doing this, we can reduce the sample selection processing time by a lot while having a trade off with slightly lesser # of samples selected and slightly more test error %. But it's not that bad an idea either I think, need to think more about this.
 - Other parameters: I have stuck to fixed values of learning rate and regularization parameter. Tried playing around with it a bit, didn't find much success out of the default of 0.1 for both. We can focus on this if all else is done. (ex: having a dynamic learning rate etc...)
 
+## Synthetic Dataset
+To load the synthetic dataset instead of MNIST, run below command (500 here is size of test set, 4 times of that will be train set size):
+```
+python -i test1.py -s 500
+```
+Inside the script, use the same commands as before to run the classifier. Just make sure not to use "class1" and "class2" flags in this case. 
+
+Also, after you train using "test.run()" you can plot the test set data and the selected test set data by using below command:
+```
+test.plot()
+```
+You will get plot like this:
+!![Selected Data Plot](https://i.ibb.co/dWpG8gH/Whats-App-Image-2021-11-14-at-3-42-16-AM.jpg)
+
 ## References:
 Sample Selection and GD Inspiration: http://image.diku.dk/jank/papers/WIREs2014.pdf  
 GD python code for hinge loss: https://towardsdatascience.com/svm-implementation-from-scratch-python-2db2fc52e5c2
