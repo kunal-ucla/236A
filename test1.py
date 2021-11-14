@@ -34,14 +34,14 @@ class tester:
 		self.test_data = self.test_data_all[select,:]
 		self.test_label = self.test_label_all[select]
 
-	def train(self, normal, alpha, lamda, epochs, method, select, shuffle, prob, init, delta):
+	def train(self, normal, alpha, lamda, epochs, method, select, shuffle, prob, init, delta, limit):
 		if normal:
 			scaler = preprocessing.StandardScaler().fit(self.train_data)
 			self.train_data = scaler.transform(self.train_data)
 			self.test_data = scaler.transform(self.test_data)
 
 		self.num_features = np.shape(self.train_data)[1]
-		self.t = classifier(self.choice1,self.choice2, self.num_features, alpha=alpha, lamda=lamda, epochs=epochs, method=method, shuffle=shuffle, prob=prob, init=init, delta=delta)
+		self.t = classifier(self.choice1,self.choice2, self.num_features, alpha=alpha, lamda=lamda, epochs=epochs, method=method, shuffle=shuffle, prob=prob, init=init, delta=delta, limit=limit)
 		
 		if select:
 			print("Selecting samples...")
@@ -52,8 +52,8 @@ class tester:
 				chosen = chosen + self.t.sample_selection(curr_sample,curr_label)
 				total = total + 1
 				print('Selected %d out of %d samples' %(chosen,total), end='\r')
-			self.selected_data=self.t.train_set
-			self.selected_label=self.t.train_label
+			self.selected_data = self.t.train_set
+			self.selected_label = self.t.train_label
 		else:
 			self.selected_data = self.train_data
 			self.selected_label = self.train_label
@@ -118,6 +118,8 @@ class tester:
 			kwargs["init"]=10
 		if "delta" not in kwargs:
 			kwargs["delta"]=1
+		if "limit" not in kwargs:
+			kwargs["limit"]=0
 
 
 		if self.loaded != 2:
@@ -126,7 +128,7 @@ class tester:
 			self.loaded = 2
 
 		self.select_class(choice1=kwargs["class1"], choice2=kwargs["class2"])
-		self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], shuffle=kwargs["shuffle"], prob=kwargs["prob"], init=kwargs["init"], delta=kwargs["delta"])
+		self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], shuffle=kwargs["shuffle"], prob=kwargs["prob"], init=kwargs["init"], delta=kwargs["delta"], limit=kwargs["limit"])
 		self.test()
 
 test = tester()

@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 class ifier:
-	def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, shuffle, prob, init, delta):
+	def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, shuffle, prob, init, delta, limit):
 		self.c=np.array([class1,class2])
 		self.M=num_features
 		self.train_set=np.empty((0,num_features))
@@ -17,6 +17,10 @@ class ifier:
 		self.prob=prob
 		self.init=init
 		self.delta=delta
+
+		# test
+		self.counter=0
+		self.limit=limit
 
 	def sample_selection(self, training_sample, training_label):
 		'''
@@ -33,8 +37,13 @@ class ifier:
 		if self.prob==0:
 			if np.shape(self.train_set)[0] < self.init:
 				is_selected=1 # select the 1st 100(self.init) samples for sure
+				self.counter=self.limit
 			else:
-				self.train(self.train_set, self.train_label)
+				if self.counter==self.limit:
+					self.train(self.train_set, self.train_label)
+					self.counter=0
+				else:
+					self.counter+=1
 				x=np.append(training_sample,1)
 				w=np.append(self.w,self.b)
 				if abs(np.dot(x,w)) < self.delta:
