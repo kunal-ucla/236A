@@ -59,7 +59,7 @@ Also, after you train using "test.run()" you can plot the test set data and the 
 test.plot()
 ```
 You will get plot like this:
-!![Selected Data Plot](https://i.ibb.co/dWpG8gH/Whats-App-Image-2021-11-14-at-3-42-16-AM.jpg)
+![Selected Data Plot](https://i.ibb.co/dWpG8gH/Whats-App-Image-2021-11-14-at-3-42-16-AM.jpg)
 
 ## References:
 Sample Selection and GD Inspiration: http://image.diku.dk/jank/papers/WIREs2014.pdf  
