@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 class ifier:
-	def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, shuffle, prob):
+	def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, shuffle, prob, init, delta):
 		self.c=np.array([class1,class2])
 		self.M=num_features
 		self.train_set=np.empty((0,num_features))
@@ -15,6 +15,8 @@ class ifier:
 		self.method=method
 		self.shuffle=shuffle
 		self.prob=prob
+		self.init=init
+		self.delta=delta
 
 	def sample_selection(self, training_sample, training_label):
 		'''
@@ -29,13 +31,13 @@ class ifier:
 
 		# code here for checking whether curr_sample should be included
 		if self.prob==0:
-			if np.shape(self.train_set)[0] < 100:
-				is_selected=1 # select the 1st 100 samples for sure
+			if np.shape(self.train_set)[0] < self.init:
+				is_selected=1 # select the 1st 100(self.init) samples for sure
 			else:
 				self.train(self.train_set, self.train_label)
 				x=np.append(training_sample,1)
 				w=np.append(self.w,self.b)
-				if abs(np.dot(x,w)) < 100:
+				if abs(np.dot(x,w)) < self.delta:
 					is_selected=1
 				else:
 					is_selected=0
@@ -45,6 +47,8 @@ class ifier:
 		if is_selected:
 			self.train_set=np.append(self.train_set, np.reshape(training_sample,(1,len(training_sample))), axis=0)
 			self.train_label=np.append(self.train_label, training_label)
+		
+		return is_selected
 
 	def train(self, train_data, train_label):
 		'''

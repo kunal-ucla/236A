@@ -1,6 +1,7 @@
 from MyClassifier_5 import ifier as classifier # using this for normalizing the data for now
 from sklearn import preprocessing
 import numpy as np
+import time
 
 
 class tester:
@@ -12,14 +13,14 @@ class tester:
 			data = np.loadtxt(fid, delimiter=",")
 		self.train_data_all = data[:,1:]
 		self.train_label_all = data[:,0]
-		self.loaded=min(2,1+self.loaded)
+		self.loaded = min(2,1+self.loaded)
 
 	def load_test(self, filename):
 		with open(filename, "r") as fid:
 			data = np.loadtxt(fid, delimiter=",")
 		self.test_data_all = data[:,1:]
 		self.test_label_all = data[:,0]
-		self.loaded=min(2,1+self.loaded)
+		self.loaded = min(2,1+self.loaded)
 
 	def select_class(self, choice1, choice2):
 		self.choice1 = choice1
@@ -33,27 +34,45 @@ class tester:
 		self.test_data = self.test_data_all[select,:]
 		self.test_label = self.test_label_all[select]
 
-	def train(self, normal, alpha, lamda, epochs, method, select, shuffle, prob):
+	def train(self, normal, alpha, lamda, epochs, method, select, shuffle, prob, init, delta):
 		if normal:
 			scaler = preprocessing.StandardScaler().fit(self.train_data)
 			self.train_data = scaler.transform(self.train_data)
 			self.test_data = scaler.transform(self.test_data)
 
 		self.num_features = np.shape(self.train_data)[1]
-		self.t = classifier(self.choice1,self.choice2, self.num_features, alpha=alpha, lamda=lamda, epochs=epochs, method=method, shuffle=shuffle, prob=prob)
+		self.t = classifier(self.choice1,self.choice2, self.num_features, alpha=alpha, lamda=lamda, epochs=epochs, method=method, shuffle=shuffle, prob=prob, init=init, delta=delta)
 		
 		if select:
+			print("Selecting samples...")
+			chosen = 0
+			total = 0
+			start = time.time()
 			for curr_sample,curr_label in zip(self.train_data,self.train_label):
-				self.t.sample_selection(curr_sample,curr_label)
+				chosen = chosen + self.t.sample_selection(curr_sample,curr_label)
+				total = total + 1
+				print('Selected %d out of %d samples' %(chosen,total), end='\r')
 			self.selected_data=self.t.train_set
 			self.selected_label=self.t.train_label
 		else:
-			self.selected_data=self.train_data
-			self.selected_label=self.train_label
+			self.selected_data = self.train_data
+			self.selected_label = self.train_label
+		end = time.time()
+		print("Time taken for selection = %f\n" %(end-start))
+		print('Sending %d samples for training...' %(chosen))
 
+		if (select==1):
+			self.t.method = 'gd' # use GD once and for all after selection
+			self.t.epochs = 70
+		
+		start = time.time()
 		self.t.train(self.selected_data,self.selected_label)
+		end = time.time()
+		print("Time taken for training = %f\n" %(end-start))
 
 	def test(self):
+		print("Starting tests...")
+
 		train_pred = self.t.test(self.train_data)
 		error_count = np.count_nonzero((train_pred-self.train_label)!=0)
 		total_count = len(train_pred)
@@ -95,7 +114,11 @@ class tester:
 			kwargs["shuffle"]=0
 		if "prob" not in kwargs:
 			kwargs["prob"]=0.2
-			
+		if "init" not in kwargs:
+			kwargs["init"]=10
+		if "delta" not in kwargs:
+			kwargs["delta"]=1
+
 
 		if self.loaded != 2:
 			self.load_train(filename=kwargs["train_file"])
@@ -103,10 +126,10 @@ class tester:
 			self.loaded = 2
 
 		self.select_class(choice1=kwargs["class1"], choice2=kwargs["class2"])
-		self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], shuffle=kwargs["shuffle"], prob=kwargs["prob"])
+		self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], shuffle=kwargs["shuffle"], prob=kwargs["prob"], init=kwargs["init"], delta=kwargs["delta"])
 		self.test()
 
-test=tester()
+test = tester()
 print("Loading default datasets...")
 test.load_train('mnist_train.csv')
 test.load_test('mnist_test.csv')
