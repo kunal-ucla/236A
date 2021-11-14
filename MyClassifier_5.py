@@ -1,33 +1,38 @@
 import numpy as np
+import random
 
 class ifier:
-	def __init__(self, class1, class2, num_features, alpha=1, lamda=1, epochs=100):
+	def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, shuffle, prob):
 		self.c=np.array([class1,class2])
 		self.M=num_features
 		self.train_set=np.empty((0,num_features))
+		self.train_label=np.array([])
 		self.w=np.zeros(self.M)
 		self.b=0
 		self.alpha=alpha
 		self.lamda=lamda
 		self.epochs=epochs
+		self.method=method
+		self.shuffle=shuffle
+		self.prob=prob
 
-	def sample_selection(self, training_sample):
+	def sample_selection(self, training_sample, training_label):
 		'''
 		Input:
 		training_sample		:	numpy array of shape (M,1)	:	current sample
+		training_label		:	int							:	current label
 
 		Output:
 		self.train_set[]	:	numpy array of shape (N,M)	:	append current_sample to this if selected
-		is_selected			:	bool						:	whether current sample selected or not
+		self.train_label[]	:	numpy array of shape (N,)	:	append current_label to this if selected
 		'''
 
 		# code here for checking whether curr_sample should be included
-		is_selected=1
+		is_selected=np.random.choice([0,1],p=[1-self.prob,self.prob])
 
 		if is_selected:
 			self.train_set=np.append(self.train_set, np.reshape(training_sample,(1,len(training_sample))), axis=0)
-		
-		return is_selected
+			self.train_label=np.append(self.train_label, training_label)
 
 	def train(self, train_data, train_label):
 		'''
@@ -43,32 +48,20 @@ class ifier:
 		self.b		:	float						:	bias term
 		'''
 
-		y=np.array([])
-
-		# print("Selection Started")
-		'''
-		the code in "if 0:" is the actual sample selection loop.
-		the problem is that it takes ~140 seconds even without
-		any logic written in the sample_selection() fn. hence
-		i've written the "else" which takes all samples at once
-		'''
-		if 0:
-			for curr_index, curr_sample in enumerate(train_data):
-				if self.sample_selection(curr_sample):
-					# y=1 if label is of class1, else -1
-					y=np.append(y, 1 if train_label[curr_index]==self.c[0] else -1)
-		else:
-			for label in train_label:
-				# y=1 if label is of class1, else -1
-				y=np.append(y, 1 if label==self.c[0] else -1)
-			self.train_set=train_data
-		# print("Selection Done")
-
-		x=np.append(self.train_set,np.ones([np.shape(self.train_set)[0],1]),axis=1)
-		w=np.append(self.w,self.b)
-
 		def grad_func(w,x,y):
-			# calculate gradient
+			'''
+			Input:
+			w,x,y
+
+			Output:
+			gradient
+			'''
+			
+			# if only 1 example is passed (SGD)
+			if type(y) == np.float64:
+				y = np.array([y])
+				x = np.array([x])
+
 			diff=1-y*(np.dot(x,w))
 			grad=np.zeros(len(w))
 			for i,d in enumerate(diff):
@@ -80,9 +73,31 @@ class ifier:
 			grad=grad/np.shape(diff)[0]
 			return grad
 
-		for e in range(1, self.epochs):
-			gradient=grad_func(w,x,y)
-			w=w-self.alpha*gradient
+		y=np.zeros(len(train_label))
+		y[train_label==self.c[0]]=1
+		y[train_label==self.c[1]]=-1
+		w=np.append(self.w,self.b)
+		x=np.append(train_data,np.ones([np.shape(train_data)[0],1]),axis=1)
+
+		for e in range(0, self.epochs):
+			if self.method=='sgd':
+				shuffle=list(range(0,np.shape(y)[0]))
+				if self.shuffle:
+					random.shuffle(shuffle) # shuffle at every epoch
+				for i in shuffle:
+					gradient=grad_func(w,x[i,:],y[i])
+					w=w-self.alpha*gradient
+			elif self.method=='gd':
+				gradient=grad_func(w,x,y)
+				w=w-self.alpha*gradient
+			elif self.method=='bgd':
+				shuffle=list(range(1,np.shape(y)[0]))
+				for i in shuffle:
+					start=max(0,i-20) # use last 20 samples at every step
+					gradient=grad_func(w,x[start:i,:],y[start:i])
+					w=w-self.alpha*gradient
+			else:
+				print("Invalid method, try again")
 
 		self.w=w[0:-1]
 		self.b=w[-1]
