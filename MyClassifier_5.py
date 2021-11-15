@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 class ifier:
-    def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, shuffle, prob, init, delta, skip):
+    def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, shuffle, prob, init, delta, skip, cos):
         self.c=np.array([class1,class2])
         self.M=num_features
         self.train_set=np.empty((0,num_features))
@@ -17,10 +17,33 @@ class ifier:
         self.prob=prob
         self.init=init
         self.delta=delta
-
-        # test
         self.counter=0
         self.skip=skip
+        self.cos_limit=cos
+
+    def cos(self, sample1, sample2):
+        # calculates cos(angle) between 2 points in the dimension space
+        num = abs(np.dot(sample1,sample2))
+        den = np.sqrt(np.dot(sample1,sample1)*np.dot(sample2,sample2))
+        cos = num/den
+        return cos
+
+    def grad_func(self, w, x, y):
+            # calculates gradient
+            if type(y) == np.float64:   # if only 1 example is passed (SGD)
+                y = np.array([y])
+                x = np.array([x])
+
+            diff=1-y*(np.dot(x,w))
+            grad=np.zeros(len(w))
+            for i,d in enumerate(diff):
+                if max(0,d)!=0:
+                    dw=2*w*self.lamda-y[i]*x[i]
+                else:
+                    dw=2*w*self.lamda
+                grad=grad+dw
+            grad=grad/np.shape(diff)[0]
+            return grad
 
     def sample_selection(self, training_sample, training_label):
         '''
@@ -53,6 +76,13 @@ class ifier:
                     is_selected=1
                 else:
                     is_selected=0
+                if (self.cos_limit!=1) & (is_selected==1):
+                    min_cos = 1
+                    for prev_sample in self.train_set:
+                        min_cos = min(min_cos, self.cos(training_sample, prev_sample))
+                    # print(min_cos)
+                    if min_cos > self.cos_limit:
+                        is_selected = 0
         else:
             is_selected=np.random.choice([0,1],p=[1-self.prob,self.prob])
 
@@ -76,24 +106,6 @@ class ifier:
         self.b        :    float                        :    bias term
         '''
 
-        def grad_func(w,x,y):
-            # calculates gradient
-            # if only 1 example is passed (SGD)
-            if type(y) == np.float64:
-                y = np.array([y])
-                x = np.array([x])
-
-            diff=1-y*(np.dot(x,w))
-            grad=np.zeros(len(w))
-            for i,d in enumerate(diff):
-                if max(0,d)!=0:
-                    dw=2*w*self.lamda-y[i]*x[i]
-                else:
-                    dw=2*w*self.lamda
-                grad=grad+dw
-            grad=grad/np.shape(diff)[0]
-            return grad
-
         y=np.zeros(len(train_label))
         y[train_label==self.c[0]]=1
         y[train_label==self.c[1]]=-1
@@ -106,15 +118,15 @@ class ifier:
                 if self.shuffle:
                     random.shuffle(shuffle) # shuffle at every epoch
                 for i in shuffle:
-                    gradient=grad_func(w,x[i,:],y[i])
+                    gradient=self.grad_func(w,x[i,:],y[i])
                     w=w-self.alpha*gradient
             elif self.method=='gd':
-                gradient=grad_func(w,x,y)
+                gradient=self.grad_func(w,x,y)
                 w=w-self.alpha*gradient
             elif self.method=='bgd':
                 end=np.shape(y)[0]
                 start=max(0,end-20) # use last 20 samples at every step
-                gradient=grad_func(w,x[start:end,:],y[start:end])
+                gradient=self.grad_func(w,x[start:end,:],y[start:end])
                 w=w-self.alpha*gradient
             else:
                 print("Invalid method, try again")

@@ -33,6 +33,7 @@ This "run" method can take the  below arguments:
 - `delta` : the range within which we'd prefer selecting the samples, distance from current hyperplane, proportional to # of samples selected, default = 1
 - `skip` : # of samples to skip in between requesting for re-trained weights from main node, so will use old-weights for these many samples, default = 0
 - `stop` : Stoppage criterion of sample selection, checks train_error on remaining test_data, if less than this value, stops sample_selection, default = 0
+- `cos` : a threshold to select only "diverse" samples to avoid selecting similar samples, more this value - less stricter the constraint, 0-1 only, default = 1
 
 Example, to run classification between digits 2 and 5 with normalization of the data and 70 epochs:
 ```
@@ -66,3 +67,4 @@ You will get plot like this:
 Sample Selection and GD Inspiration: http://image.diku.dk/jank/papers/WIREs2014.pdf  
 GD python code for hinge loss: https://towardsdatascience.com/svm-implementation-from-scratch-python-2db2fc52e5c2  
 Skipping re-training every sample (sec 3.2): http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.31.6090&rep=rep1&type=pdf  
+Avoiding selecting "similar" samples, adding "diversity": https://www.aaai.org/Papers/ICML/2003/ICML03-011.pdf  
