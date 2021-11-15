@@ -61,7 +61,7 @@ class tester:
             self.test_data = self.test_data_all[select,:]
             self.test_label = self.test_label_all[select]
 
-    def train(self, normal, alpha, lamda, epochs, method, select, shuffle, prob, init, delta, skip):
+    def train(self, normal, alpha, lamda, epochs, method, select, shuffle, prob, init, delta, skip, stop):
         if normal:
             scaler = preprocessing.StandardScaler().fit(self.train_data)
             self.train_data = scaler.transform(self.train_data)
@@ -79,6 +79,9 @@ class tester:
                 chosen = chosen + self.t.sample_selection(curr_sample,curr_label)
                 total = total + 1
                 print('Selected %d out of %d samples' %(chosen,total), end='\r')
+                if stop!=0:
+                    if self.error(self.train_data[total:,:],self.train_label[total:]) < stop:
+                        break
             self.selected_data = self.t.train_set
             self.selected_label = self.t.train_label
         else:
@@ -98,20 +101,19 @@ class tester:
         end = time.time()
         print("Time taken for training = %f\n" %(end-start))
 
+    def error(self, data, label):
+        pred = self.t.test(data)
+        error_count = np.count_nonzero((pred-label)!=0)
+        total_count = len(pred)
+        error_perc = error_count*100/total_count
+        return error_perc
+
     def test(self):
         print("Starting tests...")
 
-        train_pred = self.t.test(self.train_data)
-        error_count = np.count_nonzero((train_pred-self.train_label)!=0)
-        total_count = len(train_pred)
-        error_perc = error_count*100/total_count
-        print("Train Error percentage =",error_perc)
+        print("Train Error percentage =",self.error(self.train_data,self.train_label))
 
-        test_pred = self.t.test(self.test_data)
-        error_count = np.count_nonzero((test_pred-self.test_label)!=0)
-        total_count = len(test_pred)
-        error_perc = error_count*100/total_count
-        print("Test Error percentage =",error_perc)
+        print("Test Error percentage =",self.error(self.test_data,self.test_label))
 
     def plot(self):
         colors=['red','blue']
@@ -167,6 +169,8 @@ class tester:
             kwargs["delta"]=1
         if "skip" not in kwargs:
             kwargs["skip"]=0
+        if "stop" not in kwargs:
+            kwargs["stop"]=0
 
 
         if self.loaded != 2:
@@ -175,7 +179,7 @@ class tester:
             self.loaded = 2
 
         self.select_class(choice1=kwargs["class1"], choice2=kwargs["class2"])
-        self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], shuffle=kwargs["shuffle"], prob=kwargs["prob"], init=kwargs["init"], delta=kwargs["delta"], skip=kwargs["skip"])
+        self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], shuffle=kwargs["shuffle"], prob=kwargs["prob"], init=kwargs["init"], delta=kwargs["delta"], skip=kwargs["skip"], stop=kwargs["stop"])
         self.test()
 
 if len(sys.argv)>1:
