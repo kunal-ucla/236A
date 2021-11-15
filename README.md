@@ -28,7 +28,7 @@ This "run" method can take the  below arguments:
 - `method` : whether to use 'gd' or 'sgd' or 'bgd', default = 'gd'
 - `select` : whether to use sample_selection, default = 0
 - `shuffle` : whether to shuffle data at every epoch (only used in 'sgd'), default = 0
-- `prob` : the probability of selecting each sample in case of random sample selection, use 0 for our designed sample selection, default = 0.2
+- `prob` : the probability of selecting each sample in case of random sample selection, if 0: will use actual sample selection, default = 0
 - `init` : the number of initial number of unfiltered samples that are to be selected by the sample selector, default = 10
 - `delta` : the range within which we'd prefer selecting the samples, distance from current hyperplane, proportional to # of samples selected, default = 1
 - `skip` : # of samples to skip in between requesting for re-trained weights from main node, so will use old-weights for these many samples, default = 0
