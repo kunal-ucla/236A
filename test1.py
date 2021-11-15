@@ -61,14 +61,14 @@ class tester:
             self.test_data = self.test_data_all[select,:]
             self.test_label = self.test_label_all[select]
 
-    def train(self, normal, alpha, lamda, epochs, method, select, shuffle, prob, init, delta, skip, stop, cos):
+    def train(self, normal, alpha, lamda, epochs, method, select, shuffle, prob, init, delta, skip, stop, min_cos, max_cos, avg_cos):
         if normal:
             scaler = preprocessing.StandardScaler().fit(self.train_data)
             self.train_data = scaler.transform(self.train_data)
             self.test_data = scaler.transform(self.test_data)
 
         self.num_features = np.shape(self.train_data)[1]
-        self.t = classifier(self.choice1,self.choice2, self.num_features, alpha=alpha, lamda=lamda, epochs=epochs, method=method, shuffle=shuffle, prob=prob, init=init, delta=delta, skip=skip, cos=cos)
+        self.t = classifier(self.choice1,self.choice2, self.num_features, alpha=alpha, lamda=lamda, epochs=epochs, method=method, shuffle=shuffle, prob=prob, init=init, delta=delta, skip=skip, min_cos=min_cos, max_cos=max_cos, avg_cos=avg_cos)
         
         start = time.time()
         if select:
@@ -171,8 +171,12 @@ class tester:
             kwargs["skip"]=0
         if "stop" not in kwargs:
             kwargs["stop"]=0
-        if "cos" not in kwargs:
-            kwargs["cos"]=1
+        if "min_cos" not in kwargs:
+            kwargs["min_cos"]=1
+        if "max_cos" not in kwargs:
+            kwargs["max_cos"]=1
+        if "avg_cos" not in kwargs:
+            kwargs["avg_cos"]=1
 
 
         if self.loaded != 2:
@@ -181,7 +185,7 @@ class tester:
             self.loaded = 2
 
         self.select_class(choice1=kwargs["class1"], choice2=kwargs["class2"])
-        self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], shuffle=kwargs["shuffle"], prob=kwargs["prob"], init=kwargs["init"], delta=kwargs["delta"], skip=kwargs["skip"], stop=kwargs["stop"], cos=kwargs["cos"])
+        self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], shuffle=kwargs["shuffle"], prob=kwargs["prob"], init=kwargs["init"], delta=kwargs["delta"], skip=kwargs["skip"], stop=kwargs["stop"], min_cos=kwargs["min_cos"], max_cos=kwargs["max_cos"], avg_cos=kwargs["avg_cos"])
         self.test()
 
 if len(sys.argv)>1:

@@ -33,7 +33,7 @@ This "run" method can take the  below arguments:
 - `delta` : the range within which we'd prefer selecting the samples, distance from current hyperplane, proportional to # of samples selected, default = 1
 - `skip` : # of samples to skip in between requesting for re-trained weights from main node, so will use old-weights for these many samples, default = 0
 - `stop` : Stoppage criterion of sample selection, checks train_error on remaining test_data, if less than this value, stops sample_selection, default = 0
-- `cos` : a threshold to select only "diverse" samples to avoid selecting similar samples, more this value - less stricter the constraint, 0-1 only, default = 1
+- `min_cos`,`max_cos`,`avg_cos` : a threshold to select only "diverse" samples (to avoid similar samples), min/max/avg is for computing min/max/avg cross correlation, default =1
 
 Example, to run classification between digits 2 and 5 with normalization of the data and 70 epochs:
 ```

@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 class ifier:
-    def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, shuffle, prob, init, delta, skip, cos):
+    def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, shuffle, prob, init, delta, skip, min_cos, max_cos, avg_cos):
         self.c=np.array([class1,class2])
         self.M=num_features
         self.train_set=np.empty((0,num_features))
@@ -19,7 +19,9 @@ class ifier:
         self.delta=delta
         self.counter=0
         self.skip=skip
-        self.cos_limit=cos
+        self.min_cos=min_cos
+        self.max_cos=max_cos
+        self.avg_cos=avg_cos
 
     def cos(self, sample1, sample2):
         # calculates cos(angle) between 2 points in the dimension space
@@ -76,12 +78,17 @@ class ifier:
                     is_selected=1
                 else:
                     is_selected=0
-                if (self.cos_limit!=1) & (is_selected==1):
+                if ((self.min_cos!=1)|(self.avg_cos!=1)|(self.max_cos!=1)) & (is_selected==1):
                     min_cos = 1
+                    max_cos = 0
+                    avg_cos = 0
                     for prev_sample in self.train_set:
-                        min_cos = min(min_cos, self.cos(training_sample, prev_sample))
-                    # print(min_cos)
-                    if min_cos > self.cos_limit:
+                        cur_cos = self.cos(training_sample, prev_sample)
+                        min_cos = min(min_cos, cur_cos)
+                        max_cos = max(max_cos, cur_cos)
+                        avg_cos = avg_cos + cur_cos
+                    avg_cos = avg_cos/np.shape(self.train_set)[0]
+                    if (min_cos > self.min_cos) | (max_cos > self.max_cos) | (avg_cos > self.avg_cos):
                         is_selected = 0
         else:
             is_selected=np.random.choice([0,1],p=[1-self.prob,self.prob])
