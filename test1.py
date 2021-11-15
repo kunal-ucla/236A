@@ -22,7 +22,7 @@ class tester:
             self.train_label_all = np.where(choice, 1, -1)
         else:
             with open(filename, "r") as fid:
-                data = np.loadtxt(fid, deskiper=",")
+                data = np.loadtxt(fid, delimiter=",")
             self.train_data_all = data[:,1:]
             self.train_label_all = data[:,0]
         self.loaded = min(2,1+self.loaded)
@@ -36,7 +36,7 @@ class tester:
             self.test_label_all = np.where(choice, 1, -1)
         else:
             with open(filename, "r") as fid:
-                data = np.loadtxt(fid, deskiper=",")
+                data = np.loadtxt(fid, delimiter=",")
             self.test_data_all = data[:,1:]
             self.test_label_all = data[:,0]
         self.loaded = min(2,1+self.loaded)
@@ -118,12 +118,16 @@ class tester:
         y=self.train_label
         y[y==-1]=0
         plt.figure(1)
+        plt.xlim(-4, 4)
+        plt.ylim(-4, 4)
         plt.scatter(self.train_data[:,0],self.train_data[:,1],c=y,cmap=matplotlib.colors.ListedColormap(colors))
 
         colors=['red','blue']
         y=self.selected_label
         y[y==-1]=0
         plt.figure(2)
+        plt.xlim(-4, 4)
+        plt.ylim(-4, 4)
         plt.scatter(self.selected_data[:,0],self.selected_data[:,1],c=y,cmap=matplotlib.colors.ListedColormap(colors))
         
         plt.show()
