@@ -162,7 +162,7 @@ class tester:
         if "shuffle" not in kwargs:
             kwargs["shuffle"]=0
         if "prob" not in kwargs:
-            kwargs["prob"]=0.2
+            kwargs["prob"]=0
         if "init" not in kwargs:
             kwargs["init"]=10
         if "delta" not in kwargs:
