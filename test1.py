@@ -115,16 +115,16 @@ class tester:
 
     def plot(self):
         colors=['red','blue']
-        y=self.selected_label
-        y[y==-1]=0
-        plt.figure(1)
-        plt.scatter(self.selected_data[:,0],self.selected_data[:,1],c=y,cmap=matplotlib.colors.ListedColormap(colors))
-
-        colors=['red','blue']
         y=self.train_label
         y[y==-1]=0
-        plt.figure(2)
+        plt.figure(1)
         plt.scatter(self.train_data[:,0],self.train_data[:,1],c=y,cmap=matplotlib.colors.ListedColormap(colors))
+
+        colors=['red','blue']
+        y=self.selected_label
+        y[y==-1]=0
+        plt.figure(2)
+        plt.scatter(self.selected_data[:,0],self.selected_data[:,1],c=y,cmap=matplotlib.colors.ListedColormap(colors))
         
         plt.show()
 
