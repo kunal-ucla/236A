@@ -49,7 +49,7 @@ class ifier:
                 y=1 if training_label==self.c[0] else -1
                 p=np.dot(x,w)
 
-                if abs(p) < self.delta:
+                if (abs(p) < self.delta): # | ((abs(p) > self.delta)&(p*y < 0)):
                     is_selected=1
                 else:
                     is_selected=0
