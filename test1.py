@@ -101,8 +101,8 @@ class tester:
         print('Sending %d samples for training...' %(chosen))
 
         # reset weights in case sample_selection set some weights, and train afresh on selected samples
-        self.t.w = np.zeros(self.t.M)
-        self.t.b = 0
+        # self.t.w = np.zeros(self.t.M)
+        # self.t.b = 0
         
         start = time.time()
         self.t.train(self.selected_data,self.selected_label)

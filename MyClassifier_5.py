@@ -70,7 +70,10 @@ class ifier:
                 if self.counter==self.skip:
                     if self.method=='lp':
                         if self.selected:
-                            self.train(self.train_set, self.train_label)
+                            if np.shape(self.train_set)[0] == self.init:
+                                self.train(self.train_set, self.train_label)
+                            else:
+                                self.train(self.train_set[-1:,:], self.train_label[-1:])
                         self.selected=0
                     else:
                         temp1=self.method
@@ -162,7 +165,8 @@ class ifier:
                 t = cp.Variable(np.shape(x)[0])
                 a = cp.Variable(np.shape(x)[1])
                 v1 = np.ones(np.shape(x)[0])
-                objective = cp.Minimize(v1.T@t/np.shape(x)[0] + self.lamda*cp.norm(a,1))
+                prev_a = np.append(self.w,self.b)
+                objective = cp.Minimize(v1.T@t/np.shape(x)[0] + self.lamda*cp.norm(a-prev_a,1))
                 constraints = []
                 for i in range(0,np.shape(x)[0]):
                     constraints += [
