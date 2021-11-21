@@ -3,7 +3,7 @@ import cvxpy as cp
 import random
 
 class ifier:
-    def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, prob, init, skip, min_cos, max_cos, avg_cos, last):
+    def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, prob, init, skip, last):
         self.c=np.array([class1,class2])
         self.M=num_features
         self.train_set=np.empty((0,num_features))
