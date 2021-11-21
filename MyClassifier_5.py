@@ -162,7 +162,7 @@ class ifier:
                 t = cp.Variable(np.shape(x)[0])
                 a = cp.Variable(np.shape(x)[1])
                 v1 = np.ones(np.shape(x)[0])
-                objective = cp.Minimize(v1.T@t)
+                objective = cp.Minimize(v1.T@t/np.shape(x)[0] + self.lamda*cp.norm(a,1))
                 constraints = []
                 for i in range(0,np.shape(x)[0]):
                     constraints += [
