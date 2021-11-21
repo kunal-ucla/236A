@@ -69,3 +69,4 @@ GD python code for hinge loss: https://towardsdatascience.com/svm-implementation
 Skipping re-training every sample (sec 3.2): http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.31.6090&rep=rep1&type=pdf  
 Avoiding selecting "similar" samples, adding "diversity": https://www.aaai.org/Papers/ICML/2003/ICML03-011.pdf  
 SVM using CVXPY: https://www.cvxpy.org/examples/machine_learning/svm.html   
+Adaptive reformulation of LP at every input occurence: https://www.cs.cmu.edu/~juny/Prof/papers/kdm07jyang.pdf   
