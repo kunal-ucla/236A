@@ -61,33 +61,32 @@ class tester:
             self.test_data = self.test_data_all[select,:]
             self.test_label = self.test_label_all[select]
 
-    def train(self, normal, alpha, lamda, epochs, method, select, shuffle, prob, init, delta, skip, stop, min_cos, max_cos, avg_cos):
+    def train(self, normal, alpha, lamda, epochs, method, select, prob, init, skip, stop, min_cos, max_cos, avg_cos, last):
         if normal:
             scaler = preprocessing.StandardScaler().fit(self.train_data)
             self.train_data = scaler.transform(self.train_data)
             self.test_data = scaler.transform(self.test_data)
 
         self.num_features = np.shape(self.train_data)[1]
-        self.t = classifier(self.choice1,self.choice2, self.num_features, alpha=alpha, lamda=lamda, epochs=epochs, method=method, shuffle=shuffle, prob=prob, init=init, delta=delta, skip=skip, min_cos=min_cos, max_cos=max_cos, avg_cos=avg_cos)
+        self.t = classifier(self.choice1,self.choice2, self.num_features, alpha=alpha, lamda=lamda, epochs=epochs, method=method, prob=prob, init=init, skip=skip, min_cos=min_cos, max_cos=max_cos, avg_cos=avg_cos, last=last)
         
         start = time.time()
         if select:
             print("Selecting samples...")
             chosen = 0
             total = 0
-            # i = 0
-            # stopp = [5, 4.5, 4, 3, 3.5, 3, 2.5, 2, 1.5, 1]
-            # accu = [95, 95.5, 96, 96.5, 97, 97.5, 98, 98.5, 99]
+            i = 0
+            accu = np.array([50, 65, 80, 95])
             for curr_sample,curr_label in zip(self.train_data,self.train_label):
-                chosen = chosen + self.t.sample_selection(curr_sample,curr_label)
+                curr_chosen = self.t.sample_selection(curr_sample,curr_label)
+                chosen = chosen + curr_chosen
                 total = total + 1
                 print('Selected %d out of %d samples' %(chosen,total), end='\r')
-                if stop!=0:
-                    # if self.error(self.train_data,self.train_label) < stopp[i]:
-                    #     print('Reached %f %% accuracy at %d samples' %(accu[i], chosen))
-                    #     i = i + 1
-                    #     if i == 10:
-                    #         break
+                # if (curr_chosen == 1) & (i < len(accu)):
+                #     if (self.error(self.train_data,self.train_label) < 100 - accu[i]):
+                #         print('Reached %f %% accuracy at %d samples' %(accu[i], chosen))
+                #         i = i + 1
+                if (curr_chosen == 1) & (stop != 0):
                     if self.error(self.train_data[total:,:],self.train_label[total:]) < stop:
                         break
             self.selected_data = self.t.train_set
@@ -103,6 +102,9 @@ class tester:
         # reset weights in case sample_selection set some weights, and train afresh on selected samples
         # self.t.w = np.zeros(self.t.M)
         # self.t.b = 0
+        if method == 'gd':
+        # train with 50 epochs at the end in case of GD
+            self.t.epochs = 50
         
         start = time.time()
         self.t.train(self.selected_data,self.selected_label)
@@ -162,23 +164,23 @@ class tester:
         if "lamda" not in kwargs:
             kwargs["lamda"]=0.1
         if "epochs" not in kwargs:
-            kwargs["epochs"]=50
+            kwargs["epochs"]=10
         if "method" not in kwargs:
             kwargs["method"]='gd'
         elif kwargs["method"]=='lp':
             kwargs["epochs"]=1
+            if "last" not in kwargs:
+                kwargs["last"]=1
+        if "last" not in kwargs:
+            kwargs["last"]=20
         if "select" not in kwargs:
             kwargs["select"]=0
-        if "shuffle" not in kwargs:
-            kwargs["shuffle"]=0
         if "prob" not in kwargs:
             kwargs["prob"]=0
         if "init" not in kwargs:
-            kwargs["init"]=10
-        if "delta" not in kwargs:
-            kwargs["delta"]=1
+            kwargs["init"]=2
         if "skip" not in kwargs:
-            kwargs["skip"]=0
+            kwargs["skip"]=1
         if "stop" not in kwargs:
             kwargs["stop"]=0
         if "min_cos" not in kwargs:
@@ -195,7 +197,7 @@ class tester:
             self.loaded = 2
 
         self.select_class(choice1=kwargs["class1"], choice2=kwargs["class2"])
-        self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], shuffle=kwargs["shuffle"], prob=kwargs["prob"], init=kwargs["init"], delta=kwargs["delta"], skip=kwargs["skip"], stop=kwargs["stop"], min_cos=kwargs["min_cos"], max_cos=kwargs["max_cos"], avg_cos=kwargs["avg_cos"])
+        self.train(normal=kwargs["normal"], alpha=kwargs["alpha"], lamda=kwargs["lamda"], epochs=kwargs["epochs"], method=kwargs["method"], select=kwargs["select"], prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], min_cos=kwargs["min_cos"], max_cos=kwargs["max_cos"], avg_cos=kwargs["avg_cos"], last=kwargs["last"])
         self.test()
 
 if len(sys.argv)>1:

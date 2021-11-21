@@ -24,16 +24,13 @@ This "run" method can take the  below arguments:
 - `normal` : bool value(0 or 1) to specify whether to normalize the input data, default = 0
 - `alpha` : learning rate of gradient descent, default = 0.1
 - `lamda` : regularization parameter, default = 0.1
-- `epochs` : number of epochs to run, default = 50
+- `epochs` : number of epochs to run, default = 10
 - `method` : whether to use 'gd' or 'sgd' or 'bgd' or 'lp', default = 'gd'
 - `select` : whether to use sample_selection, default = 0
-- `shuffle` : whether to shuffle data at every epoch (only used in 'sgd'), default = 0
-- `prob` : the probability of selecting each sample in case of random sample selection, if 0: will use actual sample selection, default = 0
-- `init` : the number of initial number of unfiltered samples that are to be selected by the sample selector, default = 10
-- `delta` : the range within which we'd prefer selecting the samples, distance from current hyperplane, proportional to # of samples selected, default = 1
-- `skip` : # of samples to skip in between requesting for re-trained weights from main node, so will use old-weights for these many samples, default = 0
-- `stop` : Stoppage criterion of sample selection, checks train_error on remaining test_data, if less than this value, stops sample_selection, default = 0
-- `min_cos`,`max_cos`,`avg_cos` : a threshold to select only "diverse" samples (to avoid similar samples), min/max/avg is for computing min/max/avg cross correlation, default =1
+- `prob` : the probability of selecting each sample in case of random sample selection, default = 0
+- `init` : the number of initial number of unfiltered samples selected by the sample selector, default = 2
+- `skip` : # of times to skip re-training after sample selection, default = 0
+- `stop` : If train_error on remaining train_data less than this, stops sample_selection, default = 0
 
 Example, to run classification between digits 2 and 5 with normalization of the data and 70 epochs:
 ```
@@ -43,8 +40,6 @@ test.run(class1=2,class2=5,normal=1,epochs=70)
 
 ## Miscellaneous
 - `'gd'` is the basic gradient descent classifier. This is the default classifier if you don't mention anything. And by default runs 50 epochs. This is the classifier used at the end of sample_selection with 70 epochs irrespective of what setting you mentioned in the arguments. Whatever you mention in the arguments is used for intermediate training only during the sample_selection process. At the end, 'gd' is the way to go with 70 epochs - don't ask me why.
-- `'sgd'` is the basic stochastic gradient descent classifier. If using this, you won't find any improvement in using more than 1 epochs unless you turn on 'shuffle' flag. Shuffle basically shuffles the training data in every epoch. Tbh even after turning on the 'shuffle' and using multiple epochs, I didn't find much improvement. Not gonna use this for now until some other approach makes this useful.
-- `'bgd'` is the batch gradient descent. Tbh I have no idea what a batch GD is, I just named it that because I'd heard it somewhere and it intuitively seemed similar to what I wanted to design. So basically, I implemented this based on the idea of just using the past 10 or 20 samples because otherwise GD takes a lot of time to compute the gradient using all of the existing samples - which is a problem in sample selection because we want training to be done after each sample to determine the importance of the next.
 - `'lp'` is the Linear Programming method for getting the best hyperplane dividing the classes. When sample selection is used, then we adaptively reformulate the LP in such a way that the current point is correctly classified and the new hyperplan is as "close" in l-1 sense to the prev hyperplane as possible.
 - `normal` is the flag for normalising the data. It showed improvements by giving at most 1% of lesser error % (ex 3% errors reduced to 2%). So made sense to use this. But I've implemented this using scipy library, need to use similar API from cvxpy or make it ourselves maybe.
 - `skip` is as explained in prev section. So I observed that by doing this, we can reduce the sample selection processing time by a lot while having a trade off with slightly lesser # of samples selected and slightly more test error %. But it's not that bad an idea either I think, need to think more about this.

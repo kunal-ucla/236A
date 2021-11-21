@@ -3,7 +3,7 @@ import cvxpy as cp
 import random
 
 class ifier:
-    def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, shuffle, prob, init, delta, skip, min_cos, max_cos, avg_cos):
+    def __init__(self, class1, class2, num_features, alpha, lamda, epochs, method, prob, init, skip, min_cos, max_cos, avg_cos, last):
         self.c=np.array([class1,class2])
         self.M=num_features
         self.train_set=np.empty((0,num_features))
@@ -14,24 +14,11 @@ class ifier:
         self.lamda=lamda
         self.epochs=epochs
         self.method=method
-        self.shuffle=shuffle
         self.prob=prob
         self.init=init
-        self.delta=delta
         self.counter=0
         self.skip=skip
-        self.min_cos=min_cos
-        self.max_cos=max_cos
-        self.avg_cos=avg_cos
-        self.corr_sum=np.zeros(self.M)
-        self.selected=0
-
-    def cos(self, sample1, sample2):
-        # calculates cos(angle) between 2 points in the dimension space
-        num = abs(np.dot(sample1,sample2))
-        den = np.sqrt(np.dot(sample1,sample1)*np.dot(sample2,sample2))
-        cos = num/den
-        return cos
+        self.last=last
 
     def grad_func(self, w, x, y):
         # calculates gradient
@@ -61,67 +48,30 @@ class ifier:
         self.train_label[]  :    numpy array of shape (N,)    :    append current_label to this if selected
         '''
 
-        # code here for checking whether curr_sample should be included
-        if self.prob==0:
-            if np.shape(self.train_set)[0] < self.init:
-                is_selected=1 # select the 1st 10(self.init) samples for sure
-                self.counter=self.skip
-            else:
-                if self.counter==self.skip:
-                    if self.method=='lp':
-                        if self.selected:
-                            if np.shape(self.train_set)[0] == self.init:
-                                self.train(self.train_set, self.train_label)
-                            else:
-                                self.train(self.train_set[-1:,:], self.train_label[-1:])
-                        self.selected=0
-                    else:
-                        temp1=self.method
-                        temp2=self.epochs
-                        self.method='bgd' # always use bgd for re-train in sample selection
-                        self.epochs=10
-                        self.train(self.train_set, self.train_label)
-                        self.method=temp1
-                        self.epochs=temp2
-                    self.counter=0
-                else:
-                    self.counter+=1
-                x=np.append(training_sample,1)
-                w=np.append(self.w,self.b)
-                y=1 if training_label==self.c[0] else -1
-                p=np.dot(x,w)
-
-                if (abs(p) < self.delta): # | ((abs(p) > self.delta)&(p*y < 0)):
-                    is_selected=1
-                else:
-                    is_selected=0
-                if ((self.min_cos!=1)|((1==0) & (self.avg_cos!=1))|(self.max_cos!=1)) & (is_selected==1):
-                    min_cos = 1
-                    max_cos = 0
-                    avg_cos = 0
-                    for prev_sample in self.train_set:
-                        cur_cos = self.cos(training_sample, prev_sample)
-                        min_cos = min(min_cos, cur_cos)
-                        max_cos = max(max_cos, cur_cos)
-                        avg_cos = avg_cos + cur_cos
-                    avg_cos = avg_cos/np.shape(self.train_set)[0]
-                    if (min_cos > self.min_cos) | (max_cos > self.max_cos) | (avg_cos > self.avg_cos):
-                        is_selected = 0
-                if (self.avg_cos!=1) & (is_selected==1):
-                    corr_curr = np.dot(self.corr_sum,training_sample)/np.sqrt(np.dot(training_sample,training_sample))
-                    if abs(corr_curr) > self.avg_cos:
-                        is_selected = 0
+        if self.prob != 0:
+        # random sampling with probability of selecting "self.prob"
+            is_selected = np.random.choice([0,1],p=[1-self.prob,self.prob])
+        elif self.counter < self.init:
+        # select the 1st "self.init" samples for sure
+            is_selected = 1
+        elif abs(np.dot(training_sample,self.w)+self.b) < 1:
+        # points within 1 margin from current hyperplane
+            is_selected = 1
         else:
-            is_selected=np.random.choice([0,1],p=[1-self.prob,self.prob])
+        # otherwise don't select the point
+            is_selected = 0
 
         if is_selected:
             self.train_set=np.append(self.train_set, np.reshape(training_sample,(1,len(training_sample))), axis=0)
             self.train_label=np.append(self.train_label, training_label)
-            num_selected = np.shape(self.train_set)[0]
-            corr_new = training_sample/np.sqrt(np.dot(training_sample,training_sample))
-            self.corr_sum = self.corr_sum*(num_selected-1) + corr_new
-            self.corr_sum /= num_selected
-            self.selected = 1
+            self.counter += 1
+        if self.counter >= self.init:
+            if self.counter == self.init:
+            # train the 1st "init" samples at once
+                self.train(self.train_set, self.train_label)
+            elif (self.counter % self.skip == 0) & ((self.method != 'lp') | is_selected):
+            # skip re-training every "skip" samples; re-train only if a sample is selected in LP case
+                self.train(self.train_set[-self.last:,:], self.train_label[-self.last:])
 
         return is_selected
 
@@ -139,34 +89,21 @@ class ifier:
         self.b        :    float                        :    bias term
         '''
 
-        y=np.zeros(len(train_label))
-        y[train_label==self.c[0]]=1
-        y[train_label==self.c[1]]=-1
-        w=np.append(self.w,self.b)
-        x=np.append(train_data,np.ones([np.shape(train_data)[0],1]),axis=1)
+        y = np.zeros(len(train_label))
+        y[train_label==self.c[0]] = 1
+        y[train_label==self.c[1]] = -1
+        w = np.append(self.w,self.b)
+        x = np.append(train_data,np.ones([np.shape(train_data)[0],1]),axis=1)
 
         for e in range(0, self.epochs):
-            if self.method=='sgd':
-                shuffle=list(range(0,np.shape(y)[0]))
-                if self.shuffle:
-                    random.shuffle(shuffle) # shuffle at every epoch
-                for i in shuffle:
-                    gradient=self.grad_func(w,x[i,:],y[i])
-                    w=w-self.alpha*gradient
-            elif self.method=='gd':
-                gradient=self.grad_func(w,x,y)
-                w=w-self.alpha*gradient
-            elif self.method=='bgd':
-                end=np.shape(y)[0]
-                start=max(0,end-20) # use last 20 samples at every step
-                gradient=self.grad_func(w,x[start:end,:],y[start:end])
-                w=w-self.alpha*gradient
+            if self.method == 'gd':
+                gradient = self.grad_func(w,x,y)
+                w = w - self.alpha*gradient
             elif self.method=='lp':
                 t = cp.Variable(np.shape(x)[0])
                 a = cp.Variable(np.shape(x)[1])
                 v1 = np.ones(np.shape(x)[0])
-                prev_a = np.append(self.w,self.b)
-                objective = cp.Minimize(v1.T@t/np.shape(x)[0] + self.lamda*cp.norm(a-prev_a,1))
+                objective = cp.Minimize(v1.T@t/np.shape(x)[0] + self.lamda*cp.norm(a-w,1))
                 constraints = []
                 for i in range(0,np.shape(x)[0]):
                     constraints += [
@@ -179,8 +116,8 @@ class ifier:
             else:
                 print("Invalid method, try again")
 
-        self.w=w[0:-1]
-        self.b=w[-1]
+        self.w = w[0:-1]
+        self.b = w[-1]
 
     def f(self, input):
         # decision function based on g(y)
