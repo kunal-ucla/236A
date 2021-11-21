@@ -1,4 +1,5 @@
 import numpy as np
+import cvxpy as cp
 import random
 
 class ifier:
@@ -22,6 +23,7 @@ class ifier:
         self.min_cos=min_cos
         self.max_cos=max_cos
         self.avg_cos=avg_cos
+        self.corr_sum=np.zeros(self.M)
 
     def cos(self, sample1, sample2):
         # calculates cos(angle) between 2 points in the dimension space
@@ -31,21 +33,21 @@ class ifier:
         return cos
 
     def grad_func(self, w, x, y):
-            # calculates gradient
-            if type(y) == np.float64:   # if only 1 example is passed (SGD)
-                y = np.array([y])
-                x = np.array([x])
+        # calculates gradient
+        if type(y) == np.float64:   # if only 1 example is passed (SGD)
+            y = np.array([y])
+            x = np.array([x])
 
-            diff=1-y*(np.dot(x,w))
-            grad=np.zeros(len(w))
-            for i,d in enumerate(diff):
-                if max(0,d)!=0:
-                    dw=2*w*self.lamda-y[i]*x[i]
-                else:
-                    dw=2*w*self.lamda
-                grad=grad+dw
-            grad=grad/np.shape(diff)[0]
-            return grad
+        diff=1-y*(np.dot(x,w))
+        grad=np.zeros(len(w))
+        for i,d in enumerate(diff):
+            if max(0,d)!=0:
+                dw=2*w*self.lamda-y[i]*x[i]
+            else:
+                dw=2*w*self.lamda
+            grad=grad+dw
+        grad=grad/np.shape(diff)[0]
+        return grad
 
     def sample_selection(self, training_sample, training_label):
         '''
@@ -61,11 +63,17 @@ class ifier:
         # code here for checking whether curr_sample should be included
         if self.prob==0:
             if np.shape(self.train_set)[0] < self.init:
-                is_selected=1 # select the 1st 100(self.init) samples for sure
+                is_selected=1 # select the 1st 10(self.init) samples for sure
                 self.counter=self.skip
             else:
                 if self.counter==self.skip:
+                    temp1=self.method
+                    temp2=self.epochs
+                    self.method='bgd' # always use bgd for re-train in sample selection
+                    self.epochs=10
                     self.train(self.train_set, self.train_label)
+                    self.method=temp1
+                    self.epochs=temp2
                     self.counter=0
                 else:
                     self.counter+=1
@@ -78,7 +86,7 @@ class ifier:
                     is_selected=1
                 else:
                     is_selected=0
-                if ((self.min_cos!=1)|(self.avg_cos!=1)|(self.max_cos!=1)) & (is_selected==1):
+                if ((self.min_cos!=1)|((1==0) & (self.avg_cos!=1))|(self.max_cos!=1)) & (is_selected==1):
                     min_cos = 1
                     max_cos = 0
                     avg_cos = 0
@@ -90,12 +98,20 @@ class ifier:
                     avg_cos = avg_cos/np.shape(self.train_set)[0]
                     if (min_cos > self.min_cos) | (max_cos > self.max_cos) | (avg_cos > self.avg_cos):
                         is_selected = 0
+                if (self.avg_cos!=1) & (is_selected==1):
+                    corr_curr = np.dot(self.corr_sum,training_sample)/np.sqrt(np.dot(training_sample,training_sample))
+                    if abs(corr_curr) > self.avg_cos:
+                        is_selected = 0
         else:
             is_selected=np.random.choice([0,1],p=[1-self.prob,self.prob])
 
         if is_selected:
             self.train_set=np.append(self.train_set, np.reshape(training_sample,(1,len(training_sample))), axis=0)
             self.train_label=np.append(self.train_label, training_label)
+            num_selected = np.shape(self.train_set)[0]
+            corr_new = training_sample/np.sqrt(np.dot(training_sample,training_sample))
+            self.corr_sum = self.corr_sum*(num_selected-1) + corr_new
+            self.corr_sum /= num_selected
         
         return is_selected
 
@@ -140,6 +156,27 @@ class ifier:
 
         self.w=w[0:-1]
         self.b=w[-1]
+
+    def train_lp(self, train_data, train_label):
+        
+        t = cp.Variable(np.shape(train_data)[0])
+        a = cp.Variable(np.shape(train_data)[1])
+        b = cp.Variable()
+        v1 = np.ones(np.shape(train_data)[0])
+        objective = cp.Minimize(v1.T@t)
+        constraints = []
+        for i,(x_i,y_i) in enumerate(zip(train_data,train_label)):
+            y_i = 1 if y_i==self.c[0] else -1
+            constraints += [
+                t[i] >= 0,
+                1-y_i*(x_i.T@a + b) <= t[i]
+            ]
+        prob = cp.Problem(objective, constraints)
+        prob.solve()
+
+        self.w = a.value
+        self.b = b.value
+
 
     def f(self, input):
         # decision function based on g(y)

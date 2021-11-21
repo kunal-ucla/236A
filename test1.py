@@ -75,11 +75,19 @@ class tester:
             print("Selecting samples...")
             chosen = 0
             total = 0
+            # i = 0
+            # stopp = [5, 4.5, 4, 3, 3.5, 3, 2.5, 2, 1.5, 1]
+            # accu = [95, 95.5, 96, 96.5, 97, 97.5, 98, 98.5, 99]
             for curr_sample,curr_label in zip(self.train_data,self.train_label):
                 chosen = chosen + self.t.sample_selection(curr_sample,curr_label)
                 total = total + 1
                 print('Selected %d out of %d samples' %(chosen,total), end='\r')
                 if stop!=0:
+                    # if self.error(self.train_data,self.train_label) < stopp[i]:
+                    #     print('Reached %f %% accuracy at %d samples' %(accu[i], chosen))
+                    #     i = i + 1
+                    #     if i == 10:
+                    #         break
                     if self.error(self.train_data[total:,:],self.train_label[total:]) < stop:
                         break
             self.selected_data = self.t.train_set
@@ -92,12 +100,15 @@ class tester:
         print("Time taken for selection = %f\n" %(end-start))
         print('Sending %d samples for training...' %(chosen))
 
-        if (select==1):
-            self.t.method = 'gd' # use GD once and for all after selection
-            self.t.epochs = 70
+        # reset weights in case sample_selection set some weights, and train afresh on selected samples
+        self.t.w = np.zeros(self.t.M)
+        self.t.b = 0
         
         start = time.time()
-        self.t.train(self.selected_data,self.selected_label)
+        if method == 'lp':
+            self.t.train_lp(self.selected_data,self.selected_label)
+        else:
+            self.t.train(self.selected_data,self.selected_label)
         end = time.time()
         print("Time taken for training = %f\n" %(end-start))
 
