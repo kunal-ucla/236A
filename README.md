@@ -25,7 +25,7 @@ This "run" method can take the  below arguments:
 - `alpha` : learning rate of gradient descent, default = 0.1
 - `lamda` : regularization parameter, default = 0.1
 - `epochs` : number of epochs to run, default = 50
-- `method` : whether to use 'gd' or 'sgd' or 'bgd', default = 'gd'
+- `method` : whether to use 'gd' or 'sgd' or 'bgd' or 'lp', default = 'gd'
 - `select` : whether to use sample_selection, default = 0
 - `shuffle` : whether to shuffle data at every epoch (only used in 'sgd'), default = 0
 - `prob` : the probability of selecting each sample in case of random sample selection, if 0: will use actual sample selection, default = 0
