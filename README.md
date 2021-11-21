@@ -68,3 +68,4 @@ Sample Selection and GD Inspiration: http://image.diku.dk/jank/papers/WIREs2014.
 GD python code for hinge loss: https://towardsdatascience.com/svm-implementation-from-scratch-python-2db2fc52e5c2  
 Skipping re-training every sample (sec 3.2): http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.31.6090&rep=rep1&type=pdf  
 Avoiding selecting "similar" samples, adding "diversity": https://www.aaai.org/Papers/ICML/2003/ICML03-011.pdf  
+SVM using CVXPY: https://www.cvxpy.org/examples/machine_learning/svm.html   
