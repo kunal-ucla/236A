@@ -1,7 +1,7 @@
 # 236A
 
 ## Setting up the environment
-Download all the files of the repo in a folder. That's it lol.
+Download all the files of the repo in a folder. That's it lol. For the CSV files, click on the file here and click 'Download' and save whatever comes on display.
 
 ## How to use test1.py
 Run the below command in terminal to run the test script in 'interactive mode'
