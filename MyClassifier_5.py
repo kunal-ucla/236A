@@ -70,7 +70,7 @@ class ifier:
             # train the 1st "init" samples at once
                 self.train(self.train_set, self.train_label)
             elif (self.counter % self.skip == 0) & ((self.method != 'lp') | is_selected):
-            # skip re-training every "skip" samples; re-train only if a sample is selected in LP case
+            # skip re-training every "skip" samples; if LP case, then re-train only if a sample is selected
                 self.train(self.train_set[-self.last:,:], self.train_label[-self.last:])
 
         return is_selected
