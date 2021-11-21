@@ -24,6 +24,7 @@ class ifier:
         self.max_cos=max_cos
         self.avg_cos=avg_cos
         self.corr_sum=np.zeros(self.M)
+        self.selected=0
 
     def cos(self, sample1, sample2):
         # calculates cos(angle) between 2 points in the dimension space
@@ -67,13 +68,18 @@ class ifier:
                 self.counter=self.skip
             else:
                 if self.counter==self.skip:
-                    temp1=self.method
-                    temp2=self.epochs
-                    self.method='bgd' # always use bgd for re-train in sample selection
-                    self.epochs=10
-                    self.train(self.train_set, self.train_label)
-                    self.method=temp1
-                    self.epochs=temp2
+                    if self.method=='lp':
+                        if self.selected:
+                            self.train(self.train_set, self.train_label)
+                        self.selected=0
+                    else:
+                        temp1=self.method
+                        temp2=self.epochs
+                        self.method='bgd' # always use bgd for re-train in sample selection
+                        self.epochs=10
+                        self.train(self.train_set, self.train_label)
+                        self.method=temp1
+                        self.epochs=temp2
                     self.counter=0
                 else:
                     self.counter+=1
@@ -112,7 +118,8 @@ class ifier:
             corr_new = training_sample/np.sqrt(np.dot(training_sample,training_sample))
             self.corr_sum = self.corr_sum*(num_selected-1) + corr_new
             self.corr_sum /= num_selected
-        
+            self.selected = 1
+
         return is_selected
 
     def train(self, train_data, train_label):
@@ -151,32 +158,25 @@ class ifier:
                 start=max(0,end-20) # use last 20 samples at every step
                 gradient=self.grad_func(w,x[start:end,:],y[start:end])
                 w=w-self.alpha*gradient
+            elif self.method=='lp':
+                t = cp.Variable(np.shape(x)[0])
+                a = cp.Variable(np.shape(x)[1])
+                v1 = np.ones(np.shape(x)[0])
+                objective = cp.Minimize(v1.T@t)
+                constraints = []
+                for i in range(0,np.shape(x)[0]):
+                    constraints += [
+                        t[i] >= 0,
+                        1-y[i]*(x[i].T@a) <= t[i]
+                    ]
+                prob = cp.Problem(objective, constraints)
+                prob.solve()
+                w = a.value
             else:
                 print("Invalid method, try again")
 
         self.w=w[0:-1]
         self.b=w[-1]
-
-    def train_lp(self, train_data, train_label):
-        
-        t = cp.Variable(np.shape(train_data)[0])
-        a = cp.Variable(np.shape(train_data)[1])
-        b = cp.Variable()
-        v1 = np.ones(np.shape(train_data)[0])
-        objective = cp.Minimize(v1.T@t)
-        constraints = []
-        for i,(x_i,y_i) in enumerate(zip(train_data,train_label)):
-            y_i = 1 if y_i==self.c[0] else -1
-            constraints += [
-                t[i] >= 0,
-                1-y_i*(x_i.T@a + b) <= t[i]
-            ]
-        prob = cp.Problem(objective, constraints)
-        prob.solve()
-
-        self.w = a.value
-        self.b = b.value
-
 
     def f(self, input):
         # decision function based on g(y)

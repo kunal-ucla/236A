@@ -105,10 +105,7 @@ class tester:
         self.t.b = 0
         
         start = time.time()
-        if method == 'lp':
-            self.t.train_lp(self.selected_data,self.selected_label)
-        else:
-            self.t.train(self.selected_data,self.selected_label)
+        self.t.train(self.selected_data,self.selected_label)
         end = time.time()
         print("Time taken for training = %f\n" %(end-start))
 
@@ -168,6 +165,8 @@ class tester:
             kwargs["epochs"]=50
         if "method" not in kwargs:
             kwargs["method"]='gd'
+        elif kwargs["method"]=='lp':
+            kwargs["epochs"]=1
         if "select" not in kwargs:
             kwargs["select"]=0
         if "shuffle" not in kwargs:
