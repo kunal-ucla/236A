@@ -58,7 +58,7 @@ class ifier:
         # points within 1 margin from current hyperplane
             is_selected = 1
         else:
-        # otherwise don't select the point
+        # otherwise don't select the point 
             is_selected = 0
 
         if is_selected:
