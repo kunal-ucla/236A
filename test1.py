@@ -99,10 +99,10 @@ class tester:
                 chosen = chosen + curr_chosen
                 total = total + 1
                 print('Selected %d out of %d samples' %(chosen,total), end='\r')
-                # if (curr_chosen == 1) & (i < len(accu)):
-                #     if (self.error(self.train_data,self.train_label) < 100 - accu[i]):
-                #         print('Reached %f %% accuracy at %d samples' %(accu[i], chosen))
-                #         i = i + 1
+                if (curr_chosen == 1) & (i < len(accu)):
+                    if (self.error(self.train_data,self.train_label) < 100 - accu[i]):
+                        print('Reached %f %% accuracy at %d samples' %(accu[i], chosen))
+                        i = i + 1
                 if (curr_chosen == 1) & (stop != 0):
                     if self.error(self.train_data[total:,:],self.train_label[total:]) < stop:
                         break
