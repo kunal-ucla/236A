@@ -7,6 +7,7 @@ import sys
 import getopt
 import matplotlib.pyplot as plt
 import matplotlib
+from sklearn.cluster import KMeans
 
 class tester:
     def __init__(self, syn_size, live_plot, train_file, test_file):
@@ -64,25 +65,25 @@ class tester:
             select = (self.test_label_all==choice1) | (self.test_label_all==choice2)
             self.test_data = self.test_data_all[select,:]
             self.test_label = self.test_label_all[select]
+        self.num_features = np.shape(self.train_data)[1]
 
-    def train(self, normal, lamda, select, prob, init, skip, stop):
+    def train(self, normal, lamda, select, prob, init, skip, stop, step):
         if normal:
             scaler = preprocessing.StandardScaler().fit(self.train_data)
             self.train_data = scaler.transform(self.train_data)
             self.test_data = scaler.transform(self.test_data)
-
-        self.num_features = np.shape(self.train_data)[1]
+        
         self.t = classifier(self.choice1, self.choice2, self.num_features, lamda=lamda, prob=prob, init=init, skip=skip)
         
         start = time.time()
-        if select:
+        if select == 1:
             print("Selecting samples...")
             chosen = 0
             total = 0
             i = 0
-            accu = np.array([50, 65, 80, 95])
+            accu = np.array([50, 65, 80, 90, 95])
 
-            # plot start
+            # live plot start
             if self.live_plot:
                 colors=['red','blue']
                 plt.ion()
@@ -92,21 +93,22 @@ class tester:
                 x1 = np.linspace(-4,4,100)
                 x2 = x1*0
                 graph = plt.plot(x1,x2,'-g')[0]
-            # plot end
+            # live plot end
 
             for curr_sample,curr_label in zip(self.train_data,self.train_label):
                 curr_chosen = self.t.sample_selection(curr_sample,curr_label)
                 chosen = chosen + curr_chosen
                 total = total + 1
                 print('Selected %d out of %d samples' %(chosen,total), end='\r')
-                if (curr_chosen == 1) & (i < len(accu)):
-                    if (self.error(self.train_data,self.train_label) < 100 - accu[i]):
-                        print('Reached %f %% accuracy at %d samples' %(accu[i], chosen))
-                        i = i + 1
+                if step:
+                    if (curr_chosen == 1) & (i < len(accu)):
+                        if (self.error(self.train_data,self.train_label) < 100 - accu[i]):
+                            print('Reached %f %% accuracy at %d samples' %(accu[i], chosen))
+                            i = i + 1
                 if (curr_chosen == 1) & (stop != 0):
                     if self.error(self.train_data[total:,:],self.train_label[total:]) < stop:
                         break
-                # plot start
+                # live plot start
                 if curr_chosen & self.live_plot:
                     curr_label = 0 if curr_label==-1 else 1
                     plt.scatter(curr_sample[0],curr_sample[1],color=colors[curr_label])
@@ -115,9 +117,18 @@ class tester:
                     graph.set_ydata(x2)
                     plt.draw()
                     plt.pause(1e-10)
-                # plot end
+                # live plot end
             self.selected_data = self.t.train_set
             self.selected_label = self.t.train_label
+            self.chosen = chosen
+        elif select == 2:
+            print("Selecting samples...")
+            # total_chosen = self.t.cluster_selection(self.train_data,self.train_label,self.chosen)
+            total_chosen = self.t.ILP_selection_2(self.train_data,self.train_label)
+            chosen = sum(total_chosen)
+            self.selected_data = self.t.train_set
+            self.selected_label = self.t.train_label
+            self.temp = total_chosen
         else:
             chosen = np.shape(self.train_data)[0]
             self.selected_data = self.train_data
@@ -130,10 +141,12 @@ class tester:
         self.t.train(self.selected_data,self.selected_label)
         end = time.time()
         print("Time taken for training = %f\n" %(end-start))
-        if select & self.live_plot:
+        # live plot start
+        if (select==1) & (self.live_plot):
             plt.ioff()
             input("Press Enter to close graph...")
             plt.close()
+        # live plot end
 
     def error(self, data, label):
         pred = self.t.test(data)
@@ -150,39 +163,22 @@ class tester:
         print("Test Error percentage =",self.error(self.test_data,self.test_label))
 
     def plot(self):
-        colors=['red','blue']
-        y=self.train_label
-        y[y==-1]=0
-        plt.figure(1)
-        plt.xlim(-4, 4)
-        plt.ylim(-4, 4)
-        plt.title("Full Training Samples")
-        plt.scatter(self.train_data[:,0],self.train_data[:,1],c=y,cmap=matplotlib.colors.ListedColormap(colors))
-
         x1 = np.linspace(-4,4,100)
         x2 = - (self.t.w[1]/self.t.w[0])*x1 - (self.t.b/self.t.w[0])
 
-        colors=['red','blue']
-        y=self.selected_label
-        y[y==-1]=0
-        plt.figure(2)
-        plt.xlim(-4, 4)
-        plt.ylim(-4, 4)
-        plt.title("Selected Training Samples")
+        self.plot_scatter(self.selected_data,self.selected_label,title="Selected Training Samples")
         plt.plot(x1,x2,'-g')
-        plt.scatter(self.selected_data[:,0],self.selected_data[:,1],c=y,cmap=matplotlib.colors.ListedColormap(colors))
 
-        colors=['red','blue']
-        y=self.test_label
-        y[y==-1]=0
-        plt.figure(3)
+    def plot_scatter(self, features, labels, show = False, title = None, i = [0]):
+        i[0] = i[0] + 1
+        plt.figure(i[0])
         plt.xlim(-4, 4)
         plt.ylim(-4, 4)
-        plt.title("Testing Samples")
-        plt.plot(x1,x2,'-g')
-        plt.scatter(self.test_data[:,0],self.test_data[:,1],c=y,cmap=matplotlib.colors.ListedColormap(colors))
-        
-        plt.show()
+        plt.scatter(features[:,0], features[:,1], c = labels) 
+        if title is not None:
+            plt.title(title)
+        if show:
+            plt.show() 
 
     def run(self, **kwargs):
 
@@ -195,7 +191,7 @@ class tester:
         if "lamda" not in kwargs:
             kwargs["lamda"]=0.1
         if "select" not in kwargs:
-            kwargs["select"]=1
+            kwargs["select"]=2
         if "prob" not in kwargs:
             kwargs["prob"]=0
         if "init" not in kwargs:
@@ -204,10 +200,33 @@ class tester:
             kwargs["skip"]=1
         if "stop" not in kwargs:
             kwargs["stop"]=0
+        if "step" not in kwargs:
+            kwargs["step"]=0
 
         self.select_class(choice1=kwargs["class1"], choice2=kwargs["class2"])
-        self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=kwargs["select"], prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"])
+
+        if self.syn_size != 0:
+            # self.plot_scatter(self.train_data,self.train_label,title="Full Training Samples")
+            # self.plot_scatter(self.test_data,self.test_label,title="Testing Samples")
+
+            print('='*20)
+            print("Running Part 1")
+            print('='*20)
+            self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=1, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"])
+            self.test()
+
+        if self.syn_size != 0:
+            self.plot()
+
+        print('='*20)
+        print("Running Part 2")
+        print('='*20)
+        self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=2, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"])
         self.test()
+
+        if self.syn_size != 0:
+            self.plot()
+            plt.show()
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "s:p", ["train=","test="])
