@@ -124,7 +124,7 @@ class tester:
         elif select == 2:
             print("Selecting samples...")
             # total_chosen = self.t.cluster_selection(self.train_data,self.train_label,self.chosen)
-            total_chosen = self.t.ILP_latest(self.train_data,self.train_label)
+            total_chosen = self.t.cluster_selection_failed(self.train_data,self.train_label)
             chosen = sum(total_chosen)
             self.selected_data = self.t.train_set
             self.selected_label = self.t.train_label
@@ -207,15 +207,15 @@ class tester:
 
         self.select_class(choice1=kwargs["class1"], choice2=kwargs["class2"])
 
-        if self.syn_size != 0:
-            # self.plot_scatter(self.train_data,self.train_label,title="Full Training Samples")
-            # self.plot_scatter(self.test_data,self.test_label,title="Testing Samples")
+        # if self.syn_size != 0:
+        #     self.plot_scatter(self.train_data,self.train_label,title="Full Training Samples")
+        #     self.plot_scatter(self.test_data,self.test_label,title="Testing Samples")
 
-            print('='*20)
-            print("Running Part 1")
-            print('='*20)
-            self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=1, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"], csize=kwargs["csize"])
-            self.test()
+        print('='*20)
+        print("Running Part 1")
+        print('='*20)
+        self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=1, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"], csize=kwargs["csize"])
+        self.test()
 
         if self.syn_size != 0:
             self.plot()

@@ -240,37 +240,70 @@ class ifier:
 
     def ILP_KNN(self, train_features, train_labels):
         
+        # file:///Users/senpai/Downloads/IFS-151785.pdf
+
         # number of "positive" examples
         p = sum(c==self.c[0] for c in train_labels)
 
         # number of "negative" examples
-        n = sum(c==self.c[1] for c in train_labels)
+        q = sum(c==self.c[1] for c in train_labels)
 
         # KNN parameter
         k = self.csize
 
+        print('Computing D matrix', end='\r')
         # D matrix computation
-        D = np.zeros((p,n))
-        for i,v in enumerate(train_features[train_labels==self.c[0]]):
-            for j,w in enumerate(train_features[train_labels==self.c[1]]):
+        D = np.zeros((q,p))
+        for i,v in enumerate(train_features[train_labels==self.c[1]]):
+            for j,w in enumerate(train_features[train_labels==self.c[0]]):
                 D[i,j] = np.linalg.norm(v-w)
+
+        print('Computing Nn and Np', end='\r')
+        # Nn computation
+        Nn = np.zeros((q,k))
+        for i in range(0,q):
+            Nn[i,:] = np.argsort(D[i,:])[0:k]
 
         # Np computation
         Np = np.zeros((p,k))
+        for j in range(0,p):
+            Np[j,:] = np.argsort(D[:,j])[0:k]
+
+        print('Computing Wp and Wn', end='\r')
+        # Wp,Wn computation
+        Wp = np.zeros((q,p))
+        Wn = np.zeros((q,p))
+        for i in range(0,q):
+            for j in range(0,p):
+                Wp[i,j] = 1 if j in Nn[i,:] else 0
+                Wn[i,j] = 1 if i in Np[j,:] else 0
+
+        print('Computing f_p and f_n', end='\r')
+        # f_p, f_n computation
+        f_p = np.zeros(p)
+        f_n = np.zeros(q)
         for i in range(0,p):
-            Np[i,:] = np.argsort(D[i,:])[0:k]
+            f_p[i] = sum(Wp[:,i])
+        for i in range(0,q):
+            f_n[i] = sum(Wn[i,:])
 
-        # Nn computation
-        Nn = np.zeros((n,k))
-        for j in range(0,n):
-            Nn[j,:] = np.argsort(D[:,j])[0:k]
+        print('Computations done ...')
 
-        # Wp computation
-        Wp = np.zeros((p,n))
-        for i in range(0,p):
-            for j in range(0,n):
-                Wp[i,j] = 
+        p_i = 0
+        q_i = 0
+        selected = np.zeros(p+q)
+        for i in range(0,p+q):
+            if train_labels[i] == self.c[0]:
+                selected[i] = 0 if f_p[p_i] == 0 else 1
+                p_i += 1
+            else:
+                selected[i] = 0 if f_n[q_i] == 0 else 1
+                q_i += 1
+            if selected[i] == 1:
+                self.train_set=np.append(self.train_set, np.reshape(train_features[i],(1,len(train_features[i]))), axis=0)
+                self.train_label=np.append(self.train_label, train_labels[i])
 
+        return selected
 
     def ILP_selection(self, train_features, train_labels):
         '''
