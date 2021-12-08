@@ -219,8 +219,8 @@ except getopt.GetoptError as err:
 
 syn_size = 0
 live_plot = 0
-test_file = "mnist_train.csv"
-train_file = "mnist_test.csv"
+train_file = "mnist_train.csv"
+test_file = "mnist_test.csv"
 
 for o, a in opts:
     if o == "-s":
