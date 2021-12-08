@@ -257,14 +257,19 @@ class ifier:
 
         # Np computation
         Np = np.zeros((p,k))
-        for i,v in enumerate(train_features[train_labels==self.c[0]]):
+        for i in range(0,p):
             Np[i,:] = np.argsort(D[i,:])[0:k]
 
         # Nn computation
         Nn = np.zeros((n,k))
-        for j,w in enumerate(train_features[train_labels==self.c[1]]):
+        for j in range(0,n):
             Nn[j,:] = np.argsort(D[:,j])[0:k]
 
+        # Wp computation
+        Wp = np.zeros((p,n))
+        for i in range(0,p):
+            for j in range(0,n):
+                Wp[i,j] = 
 
 
     def ILP_selection(self, train_features, train_labels):
