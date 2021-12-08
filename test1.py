@@ -67,13 +67,13 @@ class tester:
             self.test_label = self.test_label_all[select]
         self.num_features = np.shape(self.train_data)[1]
 
-    def train(self, normal, lamda, select, prob, init, skip, stop, step):
+    def train(self, normal, lamda, select, prob, init, skip, stop, step, csize):
         if normal:
             scaler = preprocessing.StandardScaler().fit(self.train_data)
             self.train_data = scaler.transform(self.train_data)
             self.test_data = scaler.transform(self.test_data)
         
-        self.t = classifier(self.choice1, self.choice2, self.num_features, lamda=lamda, prob=prob, init=init, skip=skip)
+        self.t = classifier(self.choice1, self.choice2, self.num_features, lamda=lamda, prob=prob, init=init, skip=skip, csize=csize)
         
         start = time.time()
         if select == 1:
@@ -124,7 +124,7 @@ class tester:
         elif select == 2:
             print("Selecting samples...")
             # total_chosen = self.t.cluster_selection(self.train_data,self.train_label,self.chosen)
-            total_chosen = self.t.ILP_selection_2(self.train_data,self.train_label)
+            total_chosen = self.t.ILP_latest(self.train_data,self.train_label)
             chosen = sum(total_chosen)
             self.selected_data = self.t.train_set
             self.selected_label = self.t.train_label
@@ -202,6 +202,8 @@ class tester:
             kwargs["stop"]=0
         if "step" not in kwargs:
             kwargs["step"]=0
+        if "csize" not in kwargs:
+            kwargs["csize"]=5
 
         self.select_class(choice1=kwargs["class1"], choice2=kwargs["class2"])
 
@@ -212,7 +214,7 @@ class tester:
             print('='*20)
             print("Running Part 1")
             print('='*20)
-            self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=1, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"])
+            self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=1, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"], csize=kwargs["csize"])
             self.test()
 
         if self.syn_size != 0:
@@ -221,7 +223,7 @@ class tester:
         print('='*20)
         print("Running Part 2")
         print('='*20)
-        self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=2, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"])
+        self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=2, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"], csize=kwargs["csize"])
         self.test()
 
         if self.syn_size != 0:

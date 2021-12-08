@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import statistics
 
 class ifier:
-    def __init__(self, class1, class2, num_features, lamda=0.1, prob=0, init=10, skip=0):
+    def __init__(self, class1, class2, num_features, lamda=0.1, prob=0, init=10, skip=0, csize=5):
         self.c=np.array([class1,class2])
         self.M=num_features
         self.train_set=np.empty((0,num_features))
@@ -18,6 +18,7 @@ class ifier:
         self.init=init
         self.counter=0
         self.skip=skip
+        self.csize=csize
 
     def plot_scatter(self, features, labels, show = False, title = None, i = [0]):
         i[0] = i[0] + 1
@@ -177,6 +178,92 @@ class ifier:
                 self.train_label=np.append(self.train_label, train_labels[i])
 
         return selected
+
+    def ILP_latest(self, train_features, train_labels):
+        '''
+        Input:
+        train_features      :   numpy array of shape (N,M)  :   entire training set
+        train_labels        :   numpy array of shape (N,)   :   entire training labels
+
+        Output:
+        self.train_set[]    :   numpy array of shape (n,M)  :   selected training samples
+        self.train_label[]  :   numpy array of shape (n,)   :   selected training labels
+        '''
+        n = np.shape(train_labels)[0]
+        NUM_C = int(n/self.csize)
+        clf = KMeans(n_clusters=NUM_C, init="random", n_init=1, random_state=2)
+
+        clf.fit(train_features[train_labels==self.c[0],:])
+        clusters_1 = clf.predict(train_features[train_labels==self.c[0],:])
+        centers_1 = clf.cluster_centers_
+
+        clf.fit(train_features[train_labels==self.c[1],:])
+        clusters_2 = clf.predict(train_features[train_labels==self.c[1],:])
+        centers_2 = clf.cluster_centers_
+
+        # cluster id
+        cid = np.zeros(n)
+        cid[train_labels==self.c[0]] = clusters_1
+        cid[train_labels==self.c[1]] = clusters_2 + NUM_C
+
+        # distance opposite class
+        doc = np.zeros(n)
+        for i,v in enumerate(train_features):
+            opp_centers = centers_2 if train_labels[i] == self.c[0] else centers_1
+            doc[i] = np.linalg.norm(opp_centers-v,axis=1).min()
+
+        # distance same class
+        dsc = np.zeros(n)
+        for i,v in enumerate(train_features):
+            neighbors = train_features[cid==cid[i]]
+            dsc[i] = np.linalg.norm(neighbors-v,axis=1).min()
+
+        # ILP formulation
+        s = cp.Variable(n)
+        objective = cp.Minimize(doc.T@s - dsc.T@s)
+        constraints = [ cp.sum(s) >= int(n * 0.025 + 100*(1 - np.exp(-n))) ]
+        for i in range(0,n):
+            constraints += [
+                s[i] <= 1,
+                s[i] >= 0
+            ]
+
+        prob = cp.Problem(objective, constraints)
+        prob.solve()
+
+        for i,v in enumerate(s.value):
+            if v >= 0.5:
+                self.train_set=np.append(self.train_set, np.reshape(train_features[i],(1,len(train_features[i]))), axis=0)
+                self.train_label=np.append(self.train_label, train_labels[i])
+
+        return s.value
+
+    def ILP_KNN(self, train_features, train_labels):
+        
+        # number of "positive" examples
+        p = sum(c==self.c[0] for c in train_labels)
+
+        # number of "negative" examples
+        n = sum(c==self.c[1] for c in train_labels)
+
+        # KNN parameter
+        k = self.csize
+
+        # D matrix computation
+        D = np.zeros((p,n))
+        for i,v in enumerate(train_features[train_labels==self.c[0]]):
+            for j,w in enumerate(train_features[train_labels==self.c[1]]):
+                D[i,j] = np.linalg.norm(v-w)
+
+        # Np computation
+        Np = np.zeros((p,k))
+        for i,v in enumerate(train_features[train_labels==self.c[0]]):
+            Np[i,:] = np.argsort(D[i,:])[0:k]
+
+        # Nn computation
+        Nn = np.zeros((n,k))
+        for j,w in enumerate(train_features[train_labels==self.c[1]]):
+            Nn[j,:] = np.argsort(D[:,j])[0:k]
 
 
 
