@@ -1,5 +1,4 @@
 from MyClassifier_5 import ifier as classifier # using this for normalizing the data for now
-from sklearn import preprocessing
 import numpy as np
 from numpy.random import normal
 import time
@@ -7,7 +6,6 @@ import sys
 import getopt
 import matplotlib.pyplot as plt
 import matplotlib
-from sklearn.cluster import KMeans
 
 class tester:
     def __init__(self, syn_size, live_plot, train_file, test_file):
@@ -29,6 +27,10 @@ class tester:
                 data = np.loadtxt(fid, delimiter=",")
             self.train_data_all = data[:,1:]
             self.train_label_all = data[:,0]
+            for i in range(0,np.shape(self.train_data_all)[0]):
+                for j in range(0,np.shape(self.train_data_all)[1]):
+                    if self.train_data_all[i,j] != 0:
+                        self.train_data_all[i,j] = 1
 
         print("Loading test dataset...", end='\r')
         if self.syn_size != 0:
@@ -42,6 +44,10 @@ class tester:
                 data = np.loadtxt(fid, delimiter=",")
             self.test_data_all = data[:,1:]
             self.test_label_all = data[:,0]
+            for i in range(0,np.shape(self.test_data_all)[0]):
+                for j in range(0,np.shape(self.test_data_all)[1]):
+                    if self.test_data_all[i,j] != 0:
+                        self.test_data_all[i,j] = 1
 
         print(" "*24, end='\r')
         print("Datasets loaded.")
@@ -67,13 +73,9 @@ class tester:
             self.test_label = self.test_label_all[select]
         self.num_features = np.shape(self.train_data)[1]
 
-    def train(self, normal, lamda, select, prob, init, skip, stop, step, csize):
-        if normal:
-            scaler = preprocessing.StandardScaler().fit(self.train_data)
-            self.train_data = scaler.transform(self.train_data)
-            self.test_data = scaler.transform(self.test_data)
+    def train(self, lamda, select, prob, init, skip, stop, step, csize, switch):
         
-        self.t = classifier(self.choice1, self.choice2, self.num_features, lamda=lamda, prob=prob, init=init, skip=skip, csize=csize)
+        self.t = classifier(self.choice1, self.choice2, self.num_features, lamda=lamda, prob=prob, init=init, skip=skip, k=csize, switch=switch)
         
         start = time.time()
         if select == 1:
@@ -87,6 +89,7 @@ class tester:
             if self.live_plot:
                 colors=['red','blue']
                 plt.ion()
+                plt.figure(99)
                 plt.xlim(-4, 4)
                 plt.ylim(-4, 4)
                 plt.title("Selected Training Samples")
@@ -95,11 +98,17 @@ class tester:
                 graph = plt.plot(x1,x2,'-g')[0]
             # live plot end
 
+            accu_vs_samples = []
+            count = 0
+            curr_chosen = 0
             for curr_sample,curr_label in zip(self.train_data,self.train_label):
+                if (step) & (curr_chosen == 1):
+                    accu_vs_samples.append(100-self.error(self.test_data,self.test_label))
                 curr_chosen = self.t.sample_selection(curr_sample,curr_label)
                 chosen = chosen + curr_chosen
                 total = total + 1
-                print('Selected %d out of %d samples' %(chosen,total), end='\r')
+                # print('Selected %d out of %d samples' %(chosen,total), end='\r')
+                
                 if step:
                     if (curr_chosen == 1) & (i < len(accu)):
                         if (self.error(self.train_data,self.train_label) < 100 - accu[i]):
@@ -118,17 +127,17 @@ class tester:
                     plt.draw()
                     plt.pause(1e-10)
                 # live plot end
+                # if (curr_chosen == 1) & (chosen >= 20):
+                #     print("Current Accuracy =",accu_vs_samples[count])
+                #     count+=1
+                #     input("Press Enter to continue...")
             self.selected_data = self.t.train_set
             self.selected_label = self.t.train_label
             self.chosen = chosen
         elif select == 2:
             print("Selecting samples...")
-            # total_chosen = self.t.cluster_selection(self.train_data,self.train_label,self.chosen)
-            total_chosen = self.t.cluster_selection_failed(self.train_data,self.train_label)
-            chosen = sum(total_chosen)
-            self.selected_data = self.t.train_set
-            self.selected_label = self.t.train_label
-            self.temp = total_chosen
+            self.selected_data,self.selected_label = self.t.LP(self.train_data,self.train_label)
+            chosen = np.shape(self.selected_data)[0]
         else:
             chosen = np.shape(self.train_data)[0]
             self.selected_data = self.train_data
@@ -147,6 +156,14 @@ class tester:
             input("Press Enter to close graph...")
             plt.close()
         # live plot end
+        if (step) & (select == 1):
+            accu_vs_samples.append(100-self.error(self.train_data,self.train_label))
+            plt.figure(10)
+            plt.title("Accuracy vs Number of Samples Selected")
+            plt.xlabel("Number of Samples")
+            plt.ylabel("Accuracy (%)")
+            samples = np.linspace(1,len(accu_vs_samples),num=len(accu_vs_samples))
+            plt.plot(samples,accu_vs_samples)
 
     def error(self, data, label):
         pred = self.t.test(data)
@@ -170,11 +187,14 @@ class tester:
         plt.plot(x1,x2,'-g')
 
     def plot_scatter(self, features, labels, show = False, title = None, i = [0]):
+        colors=['red','blue']
         i[0] = i[0] + 1
+        y=np.copy(labels)
+        y[y==-1]=0
         plt.figure(i[0])
         plt.xlim(-4, 4)
         plt.ylim(-4, 4)
-        plt.scatter(features[:,0], features[:,1], c = labels) 
+        plt.scatter(features[:,0], features[:,1], c=y, cmap=matplotlib.colors.ListedColormap(colors)) 
         if title is not None:
             plt.title(title)
         if show:
@@ -186,12 +206,10 @@ class tester:
             kwargs["class1"]=1
         if "class2" not in kwargs:
             kwargs["class2"]=7
-        if "normal" not in kwargs:
-            kwargs["normal"]=0
         if "lamda" not in kwargs:
             kwargs["lamda"]=0.1
         if "select" not in kwargs:
-            kwargs["select"]=2
+            kwargs["select"]=1
         if "prob" not in kwargs:
             kwargs["prob"]=0
         if "init" not in kwargs:
@@ -203,7 +221,9 @@ class tester:
         if "step" not in kwargs:
             kwargs["step"]=0
         if "csize" not in kwargs:
-            kwargs["csize"]=5
+            kwargs["csize"]=2
+        if "switch" not in kwargs:
+            kwargs["switch"]=10
 
         self.select_class(choice1=kwargs["class1"], choice2=kwargs["class2"])
 
@@ -212,23 +232,38 @@ class tester:
         #     self.plot_scatter(self.test_data,self.test_label,title="Testing Samples")
 
         print('='*20)
-        print("Running Part 1")
+        print("Running Part 1 : All")
         print('='*20)
-        self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=1, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"], csize=kwargs["csize"])
+        self.train(lamda=kwargs["lamda"], select=0, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"], csize=kwargs["csize"], switch=kwargs["switch"])
         self.test()
 
-        if self.syn_size != 0:
-            self.plot()
+        print('='*20)
+        print("Running Part 1 : Prob")
+        print('='*20)
+        self.train(lamda=kwargs["lamda"], select=1, prob=0.3, init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"], csize=kwargs["csize"], switch=kwargs["switch"])
+        self.test()
+
+        print('='*20)
+        print("Running Part 1 : Select")
+        print('='*20)
+        self.train(lamda=kwargs["lamda"], select=1, prob=0, init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"], csize=kwargs["csize"], switch=kwargs["switch"])
+        self.test()
+
+        input("Press Enter to close graph...")
+
+        # if self.syn_size != 0:
+        #     self.plot()
 
         print('='*20)
         print("Running Part 2")
         print('='*20)
-        self.train(normal=kwargs["normal"], lamda=kwargs["lamda"], select=2, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"], csize=kwargs["csize"])
+        self.train(lamda=kwargs["lamda"], select=2, prob=kwargs["prob"], init=kwargs["init"], skip=kwargs["skip"], stop=kwargs["stop"], step=kwargs["step"], csize=kwargs["csize"], switch=kwargs["switch"])
         self.test()
 
-        if self.syn_size != 0:
-            self.plot()
-            plt.show()
+        # if self.syn_size != 0:
+        #     self.plot()
+        # if (self.syn_size != 0) | ((kwargs["select"]==1)&(kwargs["step"]==1)):
+        #     plt.show()
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "s:p", ["train=","test="])
@@ -240,8 +275,8 @@ except getopt.GetoptError as err:
 
 syn_size = 0
 live_plot = 0
-test_file = "mnist_train.csv"
-train_file = "mnist_test.csv"
+train_file = "mnist_train.csv"
+test_file = "mnist_test.csv"
 
 for o, a in opts:
     if o == "-s":
@@ -255,4 +290,4 @@ for o, a in opts:
 
 test = tester(syn_size,live_plot,train_file,test_file)
 print("Ready. Start by running 'test.run()'")
-
+test.run()
