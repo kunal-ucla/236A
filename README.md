@@ -1,7 +1,7 @@
-![Page 1](https://i.ibb.co/ns8Sbzw/1.png)
-![Page 2](https://i.ibb.co/Ns2M6zQ/2.png)
-![Page 3](https://i.ibb.co/QNBg5qv/3.png)
-![Page 4](https://i.ibb.co/Fnrg4QC/4.png)
+[![Page 1](https://i.ibb.co/ns8Sbzw/1.png)](https://docs.google.com/viewer?url=https://github.com/kunal-ucla/236A/raw/main/Report_5.pdf)
+[![Page 2](https://i.ibb.co/Ns2M6zQ/2.png)](https://docs.google.com/viewer?url=https://github.com/kunal-ucla/236A/raw/main/Report_5.pdf)
+[![Page 3](https://i.ibb.co/QNBg5qv/3.png)](https://docs.google.com/viewer?url=https://github.com/kunal-ucla/236A/raw/main/Report_5.pdf)
+[![Page 4](https://i.ibb.co/Fnrg4QC/4.png)](https://docs.google.com/viewer?url=https://github.com/kunal-ucla/236A/raw/main/Report_5.pdf)
 
 # 236A
 
