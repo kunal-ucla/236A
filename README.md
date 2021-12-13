@@ -1,3 +1,9 @@
+<object data="https://github.com/kunal-ucla/236A/raw/main/Report_5.pdf" type="application/pdf" width="700px" height="700px">
+    <embed type='application/pdf' src="https://drive.google.com/viewerng/viewer?embedded=true&url=https://github.com/kunal-ucla/236A/raw/main/Report_5.pdf">
+        <p>This browser does not support PDFs. Please download the PDF to view it: <a href="https://github.com/kunal-ucla/236A/raw/main/Report_5.pdf">Download PDF</a>.</p>
+    </embed>
+</object>
+
 # 236A
 
 ## Setting up the environment
