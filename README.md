@@ -1,3 +1,8 @@
+![Page 1](https://i.ibb.co/ns8Sbzw/1.png)
+![Page 2](https://i.ibb.co/Ns2M6zQ/2.png)
+![Page 3](https://i.ibb.co/QNBg5qv/3.png)
+![Page 4](https://i.ibb.co/Fnrg4QC/4.png)
+
 # 236A
 
 ## Setting up the environment
